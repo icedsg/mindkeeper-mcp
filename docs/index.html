@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mindkeeper-mcp — Track your thoughts. Build your mindmap.</title>
+  <meta name="description" content="An MCP server that captures ideas from AI conversations and organizes them into a persistent, hierarchical mindmap." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="container nav-inner">
+    <a class="nav-logo" href="index.html">
+      🧠 <span>mindkeeper</span>-mcp
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#tools">Tools</a>
+      <a href="demo.html">Demo</a>
+      <a href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">MCP Server · Node.js</div>
+    <h1>Track your thoughts.<br><span class="grad">Build your mindmap.</span></h1>
+    <p>
+      An MCP server that captures ideas from AI conversations and organizes
+      them into a persistent, hierarchical mindmap — surviving across sessions.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#install">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/></svg>
+        Get Started
+      </a>
+      <a class="btn btn-outline" href="demo.html">
+        View Demo
+      </a>
+      <a class="btn btn-outline" href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+        GitHub
+      </a>
+    </div>
+    <div class="badges">
+      <a href="https://www.npmjs.com/package/mindkeeper-mcp" target="_blank" rel="noopener">
+        <img src="https://img.shields.io/npm/v/mindkeeper-mcp?style=flat&colorA=0d1117&colorB=58a6ff&label=npm" alt="npm version" />
+      </a>
+      <a href="https://www.npmjs.com/package/mindkeeper-mcp" target="_blank" rel="noopener">
+        <img src="https://img.shields.io/npm/dm/mindkeeper-mcp?style=flat&colorA=0d1117&colorB=3fb950&label=downloads" alt="npm downloads" />
+      </a>
+      <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat&colorA=0d1117&colorB=ffa657" alt="node requirement" />
+      <img src="https://img.shields.io/badge/MCP-compatible-bc8cff?style=flat&colorA=0d1117" alt="MCP compatible" />
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">Why mindkeeper</p>
+    <h2 class="section-title">Everything you need for persistent AI memory</h2>
+    <p class="section-sub">
+      Ideas captured during a conversation shouldn't vanish when the session ends.
+      mindkeeper-mcp makes them permanent.
+    </p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">💾</span>
+        <h3>Persistent across sessions</h3>
+        <p>Every idea is stored in <code>~/.mindkeeper/mindmap.json</code>. Restart your AI, reopen the terminal — your mindmap is still there.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌳</span>
+        <h3>Hierarchical structure</h3>
+        <p>Nest ideas under parents to build a tree. Explore any subtree, reorganize by re-parenting, and get the full map in one call.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <h3>Local &amp; private</h3>
+        <p>All data lives on your machine. No cloud sync, no telemetry, no API keys — just a plain JSON file you control.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔍</span>
+        <h3>Full-text search</h3>
+        <p>Weighted scoring across text and tags. Exact matches, substring matches, and per-token hits — ranked by relevance.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🏷️</span>
+        <h3>Tagging system</h3>
+        <p>Attach tags to any node for cross-cutting categorization. Search by tag, filter subtrees, or export with tag metadata.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📤</span>
+        <h3>Export to Markdown</h3>
+        <p>Export your entire mindmap as a nested Markdown list — paste into docs, notes, or any text tool instantly.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <h3>Concurrency-safe writes</h3>
+        <p>Serialized write queue and atomic temp→backup→rename strategy ensure the file is never corrupted under parallel tool calls.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔌</span>
+        <h3>Works with any MCP client</h3>
+        <p>Use with Claude Desktop, Claude Code, or any client implementing the Model Context Protocol.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ── -->
+<section id="install">
+  <div class="container">
+    <p class="section-label">Quick start</p>
+    <h2 class="section-title">Up and running in 60 seconds</h2>
+    <p class="section-sub">Install globally from npm, then register it as an MCP server in your client.</p>
+
+    <div class="install-grid">
+      <!-- Step 1 -->
+      <div class="install-step">
+        <div class="install-step-header">
+          <div class="step-num">1</div>
+          <span>Install from npm</span>
+        </div>
+        <pre><code><span class="tok-cmd">npm</span> <span class="tok-flag">install</span> <span class="tok-flag">-g</span> <span class="tok-str">mindkeeper-mcp</span></code></pre>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="install-step">
+        <div class="install-step-header">
+          <div class="step-num">2</div>
+          <span>Register with Claude Code</span>
+        </div>
+        <pre><code><span class="tok-cmd">claude</span> <span class="tok-flag">mcp add</span> mindkeeper <span class="tok-str">-- mindkeeper-mcp</span></code></pre>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="install-step">
+        <div class="install-step-header">
+          <div class="step-num">3</div>
+          <span>Or register with Claude Desktop</span>
+        </div>
+        <pre><code><span class="tok-cmt">// claude_desktop_config.json</span>
+{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"mindkeeper"</span>: {
+      <span class="tok-key">"command"</span>: <span class="tok-str">"mindkeeper-mcp"</span>
+    }
+  }
+}</code></pre>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="install-step">
+        <div class="install-step-header">
+          <div class="step-num">4</div>
+          <span>Start capturing ideas</span>
+        </div>
+        <pre><code><span class="tok-cmt"># Ask your AI assistant:</span>
+<span class="tok-str">"Add 'Ship v2 by Q3' to my mindmap
+ under the strategy node,
+ tagged #roadmap #q3"</span></code></pre>
+      </div>
+    </div>
+
+    <p style="margin-top:24px; color: var(--text-muted); font-size:0.9rem;">
+      Prefer local install?
+      <code>npm install mindkeeper-mcp</code> then use
+      <code>claude mcp add mindkeeper -- node ./node_modules/.bin/mindkeeper-mcp</code>
+    </p>
+  </div>
+</section>
+
+<!-- ── Tools ── -->
+<section id="tools">
+  <div class="container">
+    <p class="section-label">MCP Tools</p>
+    <h2 class="section-title">Six tools, zero friction</h2>
+    <p class="section-sub">Every tool is callable by your AI assistant. No configuration required beyond installation.</p>
+
+    <div class="tools-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Key parameters</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>add_idea</code></td>
+            <td><code>text</code>, <code>parentId?</code>, <code>tags?</code></td>
+            <td>Capture a new idea, optionally nested under a parent node</td>
+          </tr>
+          <tr>
+            <td><code>update_node</code></td>
+            <td><code>nodeId</code>, <code>newText?</code>, <code>tags?</code></td>
+            <td>Edit the text or tags of an existing node</td>
+          </tr>
+          <tr>
+            <td><code>delete_node</code></td>
+            <td><code>nodeId</code></td>
+            <td>Remove a node; children are orphaned but preserved</td>
+          </tr>
+          <tr>
+            <td><code>search_ideas</code></td>
+            <td><code>query</code></td>
+            <td>Full-text scored search across all node text and tags</td>
+          </tr>
+          <tr>
+            <td><code>get_mindmap</code></td>
+            <td><code>nodeId?</code></td>
+            <td>Retrieve the full tree, or a subtree from a given node</td>
+          </tr>
+          <tr>
+            <td><code>export_markdown</code></td>
+            <td>—</td>
+            <td>Export the entire mindmap as a nested Markdown list</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── Demo preview ── -->
+<section>
+  <div class="container">
+    <p class="section-label">Interactive Demo</p>
+    <h2 class="section-title">See the structure</h2>
+    <p class="section-sub">Explore a live mindmap visualization and the underlying JSON schema.</p>
+
+    <div class="demo-container">
+      <div class="demo-bar">
+        <div class="demo-dot"></div>
+        <div class="demo-dot"></div>
+        <div class="demo-dot"></div>
+        <span class="demo-title">mindkeeper-mcp — interactive demo</span>
+      </div>
+      <div class="demo-placeholder">
+        <div class="icon">🗺️</div>
+        <p>Explore the interactive mindmap with D3.js force-directed graph, sample data, and full JSON schema breakdown.</p>
+        <a class="btn btn-primary" href="demo.html">Open interactive demo →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container footer-inner">
+    <p>Built by <a href="https://github.com/icedsg" target="_blank" rel="noopener">icedsg</a> · MIT License</p>
+    <div class="footer-links">
+      <a href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/mindkeeper-mcp" target="_blank" rel="noopener">npm</a>
+      <a href="demo.html">Demo</a>
+      <a href="https://github.com/icedsg/mindkeeper-mcp/issues" target="_blank" rel="noopener">Issues</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mindkeeper-mcp — Interactive Demo</title>
+  <meta name="description" content="Interactive mindmap demo for mindkeeper-mcp — see the D3.js visualization and JSON schema." />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #mindmap-canvas { cursor: grab; }
+    #mindmap-canvas:active { cursor: grabbing; }
+    .node circle {
+      stroke-width: 2;
+      transition: r 0.15s;
+    }
+    .node text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+      fill: #e6edf3;
+      pointer-events: none;
+      user-select: none;
+    }
+    .link {
+      fill: none;
+      stroke: #30363d;
+      stroke-width: 1.5;
+    }
+    .node--root circle { r: 20; }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="container nav-inner">
+    <a class="nav-logo" href="index.html">
+      🧠 <span>mindkeeper</span>-mcp
+    </a>
+    <div class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#install">Install</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="demo.html" style="color: var(--accent);">Demo</a>
+      <a href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section style="padding: 48px 0 0;">
+  <div class="container">
+    <p class="section-label">Interactive Demo</p>
+    <h2 class="section-title">Mindmap visualization</h2>
+    <p class="section-sub">
+      A live force-directed graph of a sample mindmap. Click any node to inspect its data.
+      Drag nodes to rearrange. Scroll to zoom.
+    </p>
+  </div>
+</section>
+
+<!-- ── Main demo layout ── -->
+<section style="padding-top: 32px;">
+  <div class="container">
+    <div class="demo-layout">
+
+      <!-- Graph canvas -->
+      <div class="demo-panel">
+        <div class="panel-header">
+          <div class="dot"></div>
+          Force-directed mindmap — click a node to inspect
+        </div>
+        <svg id="mindmap-canvas"></svg>
+      </div>
+
+      <!-- Side panel -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Node detail -->
+        <div class="demo-panel">
+          <div class="panel-header">
+            <div class="dot"></div>
+            Node data
+          </div>
+          <div class="panel-body">
+            <div class="node-info" id="node-hint">
+              Click any node in the graph to inspect its JSON representation.
+            </div>
+            <div id="node-detail">
+              <pre id="node-json"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schema reference -->
+        <div class="demo-panel">
+          <div class="panel-header">
+            <div class="dot" style="background:var(--purple)"></div>
+            MindNode schema
+          </div>
+          <div class="panel-body">
+            <pre><code>{
+  <span class="tok-key">"id"</span>: <span class="tok-str">"uuid-string"</span>,
+  <span class="tok-key">"text"</span>: <span class="tok-str">"string"</span>,
+  <span class="tok-key">"parentId"</span>: <span class="tok-str">"uuid | null"</span>,
+  <span class="tok-key">"children"</span>: [<span class="tok-str">"uuid"</span>, <span class="tok-str">"..."</span>],
+  <span class="tok-key">"tags"</span>: [<span class="tok-str">"string"</span>, <span class="tok-str">"..."</span>],
+  <span class="tok-key">"createdAt"</span>: <span class="tok-str">"ISO 8601"</span>,
+  <span class="tok-key">"updatedAt"</span>: <span class="tok-str">"ISO 8601"</span>
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raw JSON -->
+    <div style="margin-top: 24px;">
+      <div class="demo-panel">
+        <div class="panel-header">
+          <div class="dot" style="background:var(--orange)"></div>
+          Sample mindmap.json — what gets stored in <code style="color:var(--orange)">~/.mindkeeper/mindmap.json</code>
+        </div>
+        <div class="panel-body" style="padding:0;">
+          <pre id="full-json" style="border:none; border-radius:0; max-height:360px; overflow:auto; padding: 18px 20px;"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage examples -->
+    <div style="margin-top: 32px;">
+      <p class="section-label">Example tool calls</p>
+      <h3 class="section-title" style="font-size:1.4rem;">How the AI uses these tools</h3>
+      <div class="install-grid" style="margin-top: 24px;">
+        <div class="install-step">
+          <div class="install-step-header">
+            <div class="step-num" style="background:var(--green)">→</div>
+            <span>add_idea</span>
+          </div>
+          <pre><code>{
+  <span class="tok-key">"text"</span>: <span class="tok-str">"Ship v2 by Q3"</span>,
+  <span class="tok-key">"parentId"</span>: <span class="tok-str">"root-id"</span>,
+  <span class="tok-key">"tags"</span>: [<span class="tok-tag">"roadmap"</span>, <span class="tok-tag">"q3"</span>]
+}</code></pre>
+        </div>
+        <div class="install-step">
+          <div class="install-step-header">
+            <div class="step-num" style="background:var(--accent)">→</div>
+            <span>search_ideas</span>
+          </div>
+          <pre><code>{
+  <span class="tok-key">"query"</span>: <span class="tok-str">"EU launch"</span>
+}
+
+<span class="tok-cmt">// Returns scored results:
+// exact match  → +10
+// substring    → +5
+// token match  → +2 each
+// tag match    → +1 each</span></code></pre>
+        </div>
+        <div class="install-step">
+          <div class="install-step-header">
+            <div class="step-num" style="background:var(--purple)">→</div>
+            <span>export_markdown</span>
+          </div>
+          <pre><code><span class="tok-cmt">// Returns nested Markdown:</span>
+<span class="tok-str">- Product Strategy
+  - Ship v2 by Q3 [roadmap, q3]
+    - EU market expansion
+    - API v2 design
+  - Hire backend engineer</span></code></pre>
+        </div>
+        <div class="install-step">
+          <div class="install-step-header">
+            <div class="step-num" style="background:var(--orange)">→</div>
+            <span>get_mindmap</span>
+          </div>
+          <pre><code>{
+  <span class="tok-key">"nodeId"</span>: <span class="tok-str">"optional-subtree-id"</span>
+}
+
+<span class="tok-cmt">// Omit nodeId to get full tree.
+// Pass nodeId to get a subtree.</span></code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center; padding: 64px 0 32px;">
+      <h3 style="font-size:1.6rem; font-weight:700; margin-bottom:12px;">Ready to keep your ideas?</h3>
+      <p style="color:var(--text-muted); margin-bottom:28px;">Install in 60 seconds. Your thoughts deserve better than chat history.</p>
+      <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+        <a class="btn btn-primary" href="index.html#install">Get Started</a>
+        <a class="btn btn-outline" href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container footer-inner">
+    <p>Built by <a href="https://github.com/icedsg" target="_blank" rel="noopener">icedsg</a> · MIT License</p>
+    <div class="footer-links">
+      <a href="https://github.com/icedsg/mindkeeper-mcp" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/mindkeeper-mcp" target="_blank" rel="noopener">npm</a>
+      <a href="index.html">Home</a>
+      <a href="https://github.com/icedsg/mindkeeper-mcp/issues" target="_blank" rel="noopener">Issues</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+// ── Sample data ──────────────────────────────────────────────────────────────
+const SAMPLE = {
+  rootId: "n1",
+  nodes: {
+    "n1": { id:"n1", text:"Product Strategy", parentId:null, children:["n2","n3","n4"], tags:["strategy"], createdAt:"2025-01-10T09:00:00Z", updatedAt:"2025-01-10T09:00:00Z" },
+    "n2": { id:"n2", text:"Ship v2 by Q3",     parentId:"n1", children:["n5","n6"],     tags:["roadmap","q3"],   createdAt:"2025-01-10T09:05:00Z", updatedAt:"2025-03-01T11:00:00Z" },
+    "n3": { id:"n3", text:"Hire backend engineer", parentId:"n1", children:[],          tags:["hiring","team"],  createdAt:"2025-01-11T10:00:00Z", updatedAt:"2025-01-11T10:00:00Z" },
+    "n4": { id:"n4", text:"Reduce infra costs",    parentId:"n1", children:["n7"],      tags:["infra","costs"],  createdAt:"2025-01-12T08:30:00Z", updatedAt:"2025-02-15T14:20:00Z" },
+    "n5": { id:"n5", text:"EU market expansion",   parentId:"n2", children:[],          tags:["launch","eu"],    createdAt:"2025-01-15T10:00:00Z", updatedAt:"2025-01-15T10:00:00Z" },
+    "n6": { id:"n6", text:"API v2 design",          parentId:"n2", children:["n8"],     tags:["api","design"],   createdAt:"2025-01-16T11:00:00Z", updatedAt:"2025-02-01T09:00:00Z" },
+    "n7": { id:"n7", text:"Migrate to spot instances", parentId:"n4", children:[],      tags:["aws","infra"],    createdAt:"2025-02-10T16:00:00Z", updatedAt:"2025-02-10T16:00:00Z" },
+    "n8": { id:"n8", text:"GraphQL schema review",    parentId:"n6", children:[],       tags:["api","graphql"],  createdAt:"2025-02-01T09:05:00Z", updatedAt:"2025-02-01T09:05:00Z" },
+  }
+};
+
+// ── Render full JSON ──────────────────────────────────────────────────────────
+function syntaxHighlight(json) {
+  return json
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, m => `<span class="tok-str">${m}</span>`)
+    .replace(/\btrue\b|\bfalse\b|\bnull\b/g, m => `<span class="tok-num">${m}</span>`)
+    .replace(/: (\d+)/g, (_, n) => `: <span class="tok-num">${n}</span>`);
+}
+document.getElementById("full-json").innerHTML =
+  syntaxHighlight(JSON.stringify(SAMPLE, null, 2));
+
+// ── Build D3 tree ─────────────────────────────────────────────────────────────
+const nodes = Object.values(SAMPLE.nodes);
+const links = nodes
+  .filter(n => n.parentId)
+  .map(n => ({ source: n.parentId, target: n.id }));
+
+const colors = {
+  0: "#58a6ff",
+  1: "#3fb950",
+  2: "#bc8cff",
+  3: "#ffa657",
+};
+function depth(id, d = 0) {
+  const n = SAMPLE.nodes[id];
+  if (!n || !n.parentId) return d;
+  return depth(n.parentId, d + 1);
+}
+
+const svg = d3.select("#mindmap-canvas");
+const rect = document.getElementById("mindmap-canvas").getBoundingClientRect();
+const W = rect.width || 600;
+const H = 520;
+svg.attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("height", H);
+
+const g = svg.append("g");
+
+svg.call(
+  d3.zoom().scaleExtent([0.3, 3]).on("zoom", e => g.attr("transform", e.transform))
+);
+
+const sim = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(90))
+  .force("charge", d3.forceManyBody().strength(-350))
+  .force("center", d3.forceCenter(W / 2, H / 2))
+  .force("collide", d3.forceCollide(40));
+
+const link = g.append("g")
+  .selectAll("line")
+  .data(links)
+  .join("line")
+  .attr("class", "link");
+
+const node = g.append("g")
+  .selectAll("g")
+  .data(nodes)
+  .join("g")
+  .attr("class", "node")
+  .call(
+    d3.drag()
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+  )
+  .on("click", (e, d) => {
+    const detail = document.getElementById("node-detail");
+    const hint   = document.getElementById("node-hint");
+    const pre    = document.getElementById("node-json");
+    hint.style.display = "none";
+    detail.classList.add("visible");
+    pre.innerHTML = syntaxHighlight(JSON.stringify(d, null, 2));
+    node.selectAll("circle").attr("stroke", nd =>
+      nd.id === d.id ? "#fff" : colors[depth(nd.id) % 4]
+    );
+  });
+
+node.append("circle")
+  .attr("r", d => d.parentId === null ? 22 : d.children.length ? 16 : 10)
+  .attr("fill", d => colors[depth(d.id) % 4] + "22")
+  .attr("stroke", d => colors[depth(d.id) % 4]);
+
+node.append("text")
+  .attr("dy", d => (d.parentId === null ? 36 : 28))
+  .attr("text-anchor", "middle")
+  .attr("font-size", d => d.parentId === null ? 13 : 11)
+  .attr("font-weight", d => d.parentId === null ? 700 : 400)
+  .text(d => d.text.length > 22 ? d.text.slice(0, 20) + "…" : d.text);
+
+sim.on("tick", () => {
+  link
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+</script>
+
+</body>
+</html>
