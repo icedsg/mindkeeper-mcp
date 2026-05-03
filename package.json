@@ -1,0 +1,43 @@
+{
+  "name": "mindkeeper-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "mindkeeper-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "prepare": "npm run build",
+    "test": "bash test.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mindmap",
+    "ideas",
+    "knowledge-management",
+    "ai-assistant",
+    "productivity"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/mindkeeper-mcp.git"
+  },
+  "license": "MIT"
+}
