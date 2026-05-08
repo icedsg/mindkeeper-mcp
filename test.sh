@@ -33,7 +33,7 @@ import { readFile } from 'fs/promises';
 import { homedir } from 'os';
 import {
   addIdea, updateNode, deleteNode,
-  searchNodes, getSubtree, exportMarkdown, exportJSON,
+  searchNodes, getSubtree, exportMarkdown, exportMermaid, exportOPML, exportJSON,
 } from './build/mindmap.js';
 
 HEADER
@@ -311,6 +311,110 @@ await test('rootId on disk points to a real node', async () => {
   if (rootId === null) throw new Error('rootId is null');
   if (!nodes[rootId])  throw new Error(`rootId ${rootId} not in nodes`);
   ok(`rootId=${rootId.slice(0,8)}… resolves to "${nodes[rootId].text}"`);
+});
+
+// ── Tag normalization ─────────────────────────────────────────────────────────
+section('Tag normalization');
+
+await test('# prefix is stripped on addIdea', async () => {
+  const n = await addIdea('Tag test node', undefined, ['#roadmap', '#q3']);
+  if (n.tags.some(t => t.startsWith('#'))) throw new Error(`# not stripped: ${JSON.stringify(n.tags)}`);
+  if (!n.tags.includes('roadmap')) throw new Error(`"roadmap" missing: ${JSON.stringify(n.tags)}`);
+  if (!n.tags.includes('q3'))      throw new Error(`"q3" missing: ${JSON.stringify(n.tags)}`);
+  ids.tagtest = n.id;
+  ok(`["#roadmap","#q3"] → ${JSON.stringify(n.tags)}`);
+});
+
+await test('tags are lowercased on addIdea', async () => {
+  const n = await addIdea('Case test', undefined, ['#UPPER', 'MixedCase']);
+  if (n.tags.some(t => t !== t.toLowerCase()))
+    throw new Error(`uppercase not lowercased: ${JSON.stringify(n.tags)}`);
+  ok(`uppercased input → ${JSON.stringify(n.tags)}`);
+});
+
+await test('# prefix stripped on updateNode', async () => {
+  const n = await updateNode(ids.tagtest, 'Tag test node updated', ['#sprint1', '#done']);
+  if (n.tags.some(t => t.startsWith('#'))) throw new Error(`# not stripped on update: ${JSON.stringify(n.tags)}`);
+  ok(`updateNode strips # → ${JSON.stringify(n.tags)}`);
+});
+
+await test('search finds node by normalized tag', async () => {
+  const r = await searchNodes('sprint1');
+  if (!r.some(x => x.node.id === ids.tagtest)) throw new Error('normalized tag not searchable');
+  ok('tag "sprint1" (stored without #) found by search');
+});
+
+// ── Export Mermaid ────────────────────────────────────────────────────────────
+section('Export Mermaid');
+
+await test('output starts with flowchart TD', async () => {
+  const m = await exportMermaid();
+  if (!m.startsWith('flowchart TD')) throw new Error(`unexpected start: ${m.slice(0, 40)}`);
+  ok('starts with "flowchart TD"');
+});
+
+await test('mermaid contains node definitions for all nodes', async () => {
+  const m = await exportMermaid();
+  const map = await exportJSON();
+  const nodeCount = Object.keys(map.nodes).length;
+  // Count opening brackets of node label definitions (["  — works regardless of multiline labels
+  const defCount = (m.match(/\["/g) || []).length;
+  if (defCount !== nodeCount) throw new Error(`${defCount} defs for ${nodeCount} nodes`);
+  ok(`${defCount} node definition(s) match map`);
+});
+
+await test('mermaid contains --> edges for parent-child pairs', async () => {
+  const m = await exportMermaid();
+  if (!m.includes('-->')) throw new Error('no edges found');
+  ok('edges present');
+});
+
+await test('mermaid node ids are alphanumeric (no raw UUIDs)', async () => {
+  const m = await exportMermaid();
+  // raw UUID format (with hyphens) should not appear as node IDs
+  const rawUuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}/;
+  if (rawUuidPattern.test(m)) throw new Error('raw UUID found in output');
+  ok('no raw UUIDs — hyphens replaced');
+});
+
+// ── Export OPML ───────────────────────────────────────────────────────────────
+section('Export OPML');
+
+await test('output is valid XML declaration', async () => {
+  const o = await exportOPML();
+  if (!o.startsWith('<?xml')) throw new Error(`unexpected start: ${o.slice(0, 40)}`);
+  ok('starts with <?xml');
+});
+
+await test('opml wraps content in <opml> and <body>', async () => {
+  const o = await exportOPML();
+  if (!o.includes('<opml')) throw new Error('missing <opml>');
+  if (!o.includes('<body>') && !o.includes('<body\n')) throw new Error('missing <body>');
+  ok('<opml> and <body> present');
+});
+
+await test('opml contains outline elements for nodes', async () => {
+  const o = await exportOPML();
+  if (!o.includes('<outline')) throw new Error('no <outline> elements');
+  ok('<outline> elements present');
+});
+
+await test('opml escapes XML special characters in text', async () => {
+  const n = await addIdea('Test <node> & "quotes"', undefined, ['xml']);
+  const o = await exportOPML();
+  if (o.includes('<node>') && !o.includes('&lt;node&gt;'))
+    throw new Error('< not escaped in OPML');
+  if (o.includes(' & ') && !o.includes('&amp;'))
+    throw new Error('& not escaped in OPML');
+  await deleteNode(n.id);
+  ok('< > & " are XML-escaped');
+});
+
+await test('opml tags appear as _tags attribute', async () => {
+  // ids.tagtest was updated to have sprint1,done tags
+  const o = await exportOPML();
+  if (!o.includes('_tags=')) throw new Error('_tags attribute missing');
+  ok('_tags attribute present');
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────

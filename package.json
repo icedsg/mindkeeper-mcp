@@ -1,6 +1,6 @@
 {
   "name": "mindkeeper-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap",
   "main": "build/index.js",
   "type": "module",
@@ -35,9 +35,10 @@
     "ai-assistant",
     "productivity"
   ],
+  "homepage": "https://icedsg.github.io/mindkeeper-mcp/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/mindkeeper-mcp.git"
+    "url": "https://github.com/icedsg/mindkeeper-mcp"
   },
   "license": "MIT"
 }

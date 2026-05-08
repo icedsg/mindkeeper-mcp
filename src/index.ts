@@ -12,8 +12,16 @@ import {
   searchNodes,
   getSubtree,
   exportMarkdown,
+  exportMermaid,
+  exportOPML,
   exportJSON,
 } from "./mindmap.js";
+import {
+  loadConfig,
+  saveConfig,
+  pushToGist,
+  pullFromGist,
+} from "./storage.js";
 import type { MindNode, Mindmap } from "./types.js";
 
 const server = new Server(
@@ -74,7 +82,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: "array",
             items: { type: "string" },
             description:
-              "Optional topic tags for grouping and filtering (e.g. [\"project\", \"urgent\"])",
+              "Optional topic tags. Leading # is stripped and values are lowercased automatically. " +
+              "Pass either [\"roadmap\", \"q3\"] or [\"#roadmap\", \"#q3\"] — both work.",
           },
         },
         required: ["text"],
@@ -101,7 +110,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: "array",
             items: { type: "string" },
             description:
-              "Replacement tag list. Provide the full desired set — this overwrites existing tags.",
+              "Replacement tag list (full set — overwrites existing tags). " +
+              "Leading # is stripped and values are lowercased automatically.",
           },
         },
         required: ["nodeId", "newText"],
@@ -163,6 +173,55 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description:
         "Export the full mindmap as a Markdown nested list, ready to copy into a document or note. " +
         "Tags are shown inline. Orphaned nodes are listed in a separate section.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "export_mermaid",
+      description:
+        "Export the full mindmap as a Mermaid flowchart diagram. " +
+        "Paste the output into any Markdown renderer that supports Mermaid (GitHub, Notion, Obsidian) to get a visual graph.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "export_opml",
+      description:
+        "Export the full mindmap as OPML (Outline Processor Markup Language). " +
+        "OPML is supported by dedicated mindmap apps such as MindNode, OmniOutliner, and XMind for import.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "sync_cloud",
+      description:
+        "Sync the mindmap with GitHub Gist cloud storage. " +
+        "Requires ~/.mindkeeper/config.json with cloud credentials (see README). " +
+        "Use direction='push' to upload local state, 'pull' to download and overwrite local. " +
+        "First push auto-creates a private Gist and saves the gistId back to config.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          direction: {
+            type: "string",
+            enum: ["push", "pull"],
+            description: "push = upload local → cloud | pull = download cloud → local",
+          },
+        },
+        required: ["direction"],
+      },
+    },
+    {
+      name: "cloud_status",
+      description:
+        "Check whether cloud sync is configured and show the current config (token is masked). " +
+        "Returns the provider, gistId (if any), and setup instructions if not configured.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -238,6 +297,86 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const markdown = await exportMarkdown();
         console.error(`[mindkeeper] tool export_markdown (${markdown.length} chars)`);
         return { content: [{ type: "text" as const, text: markdown }] };
+      }
+
+      case "export_mermaid": {
+        const mermaid = await exportMermaid();
+        console.error(`[mindkeeper] tool export_mermaid (${mermaid.length} chars)`);
+        return { content: [{ type: "text" as const, text: mermaid }] };
+      }
+
+      case "export_opml": {
+        const opml = await exportOPML();
+        console.error(`[mindkeeper] tool export_opml (${opml.length} chars)`);
+        return { content: [{ type: "text" as const, text: opml }] };
+      }
+
+      case "sync_cloud": {
+        const direction = args["direction"] as "push" | "pull";
+        const cfg = await loadConfig();
+
+        if (!cfg.cloud) {
+          return ok({
+            error: "Cloud sync not configured.",
+            setup: [
+              "Create ~/.mindkeeper/config.json with your GitHub credentials:",
+              JSON.stringify(
+                {
+                  cloud: {
+                    provider: "github_gist",
+                    token: "ghp_YOUR_PERSONAL_ACCESS_TOKEN",
+                    gistId: "(leave blank — auto-created on first push)",
+                  },
+                },
+                null,
+                2
+              ),
+              "Generate a token at: https://github.com/settings/tokens (needs 'gist' scope)",
+            ],
+          });
+        }
+
+        if (cfg.cloud.provider !== "github_gist") {
+          throw new Error(`Unsupported provider: ${cfg.cloud.provider}`);
+        }
+
+        const gistCfg = cfg.cloud;
+
+        if (direction === "push") {
+          const mindmap = await exportJSON();
+          const { gistId, url } = await pushToGist(mindmap, gistCfg);
+          if (!gistCfg.gistId) {
+            cfg.cloud.gistId = gistId;
+            await saveConfig(cfg);
+          }
+          const nodeCount = Object.keys(mindmap.nodes).length;
+          console.error(`[mindkeeper] sync_cloud push -> gist ${gistId}`);
+          return ok({ direction: "push", gistId, url, nodeCount });
+        } else {
+          const mindmap = await pullFromGist(gistCfg);
+          const { saveMindmap } = await import("./storage.js");
+          await saveMindmap(mindmap);
+          const nodeCount = Object.keys(mindmap.nodes).length;
+          console.error(`[mindkeeper] sync_cloud pull <- gist ${gistCfg.gistId}`);
+          return ok({ direction: "pull", gistId: gistCfg.gistId, nodeCount });
+        }
+      }
+
+      case "cloud_status": {
+        const cfg = await loadConfig();
+        if (!cfg.cloud) {
+          return ok({
+            configured: false,
+            message: "No cloud config found at ~/.mindkeeper/config.json",
+          });
+        }
+        const raw = cfg.cloud as unknown as { token: string; [key: string]: unknown };
+        const { token, ...rest } = raw;
+        return ok({
+          configured: true,
+          ...rest,
+          token: token ? `${token.slice(0, 6)}${"*".repeat(10)}` : "(missing)",
+        });
       }
 
       default:

@@ -18,6 +18,10 @@ function ts(): string {
   return new Date().toISOString();
 }
 
+function normalizeTags(tags: string[]): string[] {
+  return tags.map((t) => t.replace(/^#+/, "").trim().toLowerCase()).filter(Boolean);
+}
+
 // ── Write operations (serialized) ────────────────────────────────────────────
 
 export function addIdea(
@@ -38,7 +42,7 @@ export function addIdea(
       children: [],
       createdAt: ts(),
       updatedAt: ts(),
-      tags: tags ?? [],
+      tags: normalizeTags(tags ?? []),
       ...(parentId !== undefined && { parentId }),
     };
 
@@ -71,7 +75,7 @@ export function updateNode(
     if (!node) throw new Error(`Node not found: ${nodeId}`);
 
     node.text = newText;
-    if (newTags !== undefined) node.tags = newTags;
+    if (newTags !== undefined) node.tags = normalizeTags(newTags);
     node.updatedAt = ts();
 
     await saveMindmap(map);
@@ -195,4 +199,86 @@ export async function exportMarkdown(): Promise<string> {
 
 export async function exportJSON(): Promise<Mindmap> {
   return loadMindmap();
+}
+
+export async function exportMermaid(): Promise<string> {
+  const map = await loadMindmap();
+
+  function sid(id: string): string {
+    return "n" + id.replace(/-/g, "_");
+  }
+
+  function esc(text: string): string {
+    return text.replace(/"/g, "'").replace(/[<>{}[\]]/g, "");
+  }
+
+  const nodeDefs: string[] = [];
+  const edges: string[] = [];
+
+  for (const node of Object.values(map.nodes)) {
+    const label =
+      node.tags.length > 0
+        ? `${esc(node.text)}\n#lsqb;${node.tags.join(", ")}#rsqb;`
+        : esc(node.text);
+    nodeDefs.push(`  ${sid(node.id)}["${label}"]`);
+    for (const childId of node.children) {
+      edges.push(`  ${sid(node.id)} --> ${sid(childId)}`);
+    }
+  }
+
+  return ["flowchart TD", ...nodeDefs, ...edges].join("\n");
+}
+
+export async function exportOPML(): Promise<string> {
+  const map = await loadMindmap();
+
+  function escXml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderOutline(id: string, depth: number): string {
+    const node = map.nodes[id];
+    if (!node) return "";
+    const indent = "  ".repeat(depth + 2);
+    const tagsAttr =
+      node.tags.length > 0
+        ? ` _tags="${escXml(node.tags.join(","))}"`
+        : "";
+    const childLines = node.children
+      .map((cid) => renderOutline(cid, depth + 1))
+      .filter(Boolean);
+
+    if (childLines.length > 0) {
+      return [
+        `${indent}<outline text="${escXml(node.text)}"${tagsAttr}>`,
+        ...childLines,
+        `${indent}</outline>`,
+      ].join("\n");
+    }
+    return `${indent}<outline text="${escXml(node.text)}"${tagsAttr} />`;
+  }
+
+  const parts: string[] = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<opml version="2.0">',
+    "  <head>",
+    "    <title>Mindkeeper Mindmap</title>",
+    `    <dateCreated>${new Date().toUTCString()}</dateCreated>`,
+    "  </head>",
+    "  <body>",
+  ];
+
+  if (map.rootId) parts.push(renderOutline(map.rootId, 0));
+
+  const orphans = Object.values(map.nodes).filter(
+    (n) => n.parentId === undefined && n.id !== map.rootId
+  );
+  for (const orphan of orphans) parts.push(renderOutline(orphan.id, 0));
+
+  parts.push("  </body>", "</opml>");
+  return parts.join("\n");
 }
