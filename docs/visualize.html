@@ -318,13 +318,18 @@
 
 <!-- CDN libraries -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-elixir@4/dist/mind-elixir.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-elixir@3/dist/mind-elixir.umd.js"></script>
 
 <script>
 /* ── State ── */
 let mindmapData = null;
 let meInstance = null;
 let activeTab = 'force';
+let forceSimulation = null;
+
+/* ── Reusable zoom behaviors (created once, reused across renders) ── */
+const forceZoom = d3.zoom().scaleExtent([0.2, 4]);
+const treeZoom  = d3.zoom().scaleExtent([0.1, 4]);
 
 /* ── Helpers ── */
 function showError(msg) {
@@ -393,10 +398,19 @@ fileInput.addEventListener('change', () => {
 });
 
 document.getElementById('reset-btn').addEventListener('click', () => {
+  if (forceSimulation) { forceSimulation.stop(); forceSimulation = null; }
   mindmapData = null;
   meInstance = null;
   fileInput.value = '';
   document.getElementById('me-container').innerHTML = '';
+  d3.select('#force-root').selectAll('*').remove();
+  d3.select('#tree-root').selectAll('*').remove();
+  // Reset tab UI back to force
+  activeTab = 'force';
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-tab="force"]').classList.add('active');
+  document.querySelectorAll('.viz-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-force').classList.add('active');
   switchView('drop');
 });
 
@@ -453,7 +467,8 @@ function renderForce() {
     }
   }
 
-  const sim = d3.forceSimulation(nodeList)
+  if (forceSimulation) forceSimulation.stop();
+  forceSimulation = d3.forceSimulation(nodeList)
     .force('link', d3.forceLink(linkList).id(d => d.id).distance(100))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(W / 2, H / 2))
@@ -477,14 +492,15 @@ function renderForce() {
     .attr('x', 12).attr('dy', '0.35em')
     .text(d => d.text.length > 30 ? d.text.slice(0, 28) + '…' : d.text);
 
-  sim.on('tick', () => {
+  forceSimulation.on('tick', () => {
     link
       .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
       .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
     node.attr('transform', d => `translate(${d.x},${d.y})`);
   });
 
-  svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
+  forceZoom.on('zoom', e => g.attr('transform', e.transform));
+  svg.call(forceZoom);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -532,14 +548,17 @@ function renderTree() {
     });
 
   const pane = document.getElementById('pane-tree');
-  svg.call(d3.zoom().scaleExtent([0.1, 4]).on('zoom', e => g.attr('transform', e.transform)));
+  treeZoom.on('zoom', e => g.attr('transform', e.transform));
+  svg.call(treeZoom);
 
-  // Center view
+  // Center view — use fallback dims when pane is hidden (not the active tab)
+  const paneW = pane.clientWidth || 900;
+  const paneH = pane.clientHeight || 600;
   const bounds = g.node().getBBox();
-  const scale = Math.min(1, (pane.clientWidth / (bounds.width + 80)), (pane.clientHeight / (bounds.height + 80)));
-  const tx = (pane.clientWidth - bounds.width * scale) / 2 - bounds.x * scale;
-  const ty = (pane.clientHeight - bounds.height * scale) / 2 - bounds.y * scale;
-  svg.call(d3.zoom().transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+  const scale = Math.min(1, paneW / (bounds.width + 80), paneH / (bounds.height + 80));
+  const tx = (paneW - bounds.width * scale) / 2 - bounds.x * scale;
+  const ty = (paneH - bounds.height * scale) / 2 - bounds.y * scale;
+  treeZoom.transform(svg, d3.zoomIdentity.translate(tx, ty).scale(scale));
 }
 
 /* ══════════════════════════════════════════════════════
@@ -590,9 +609,8 @@ function renderMindElixir() {
       toolBar: false,
       keypress: false,
       mouseSelectionButton: 0,
-      data: { nodeData },
     });
-    meInstance.init();
+    meInstance.init({ nodeData });
   } catch (err) {
     container.innerHTML = `<p style="padding:40px;color:var(--red)">mind-elixir error: ${err.message}</p>`;
   }
