@@ -63,7 +63,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: "add_idea",
       description:
         "Capture a new idea or concept into the persistent mindmap. " +
-        "Use this whenever the user shares an idea, insight, goal, task, or any thought worth keeping. " +
+        "ONLY use this when the user themselves has expressed an idea, question, goal, task, topic, or interest — " +
+        "including casual searches ('how to cook biryani'), projects they mention, or anything they bring up. " +
+        "NEVER invent, generate, or seed example nodes. NEVER add content Claude thought of. " +
+        "Before adding, check if the same idea already exists (use search_ideas) to avoid duplicates. " +
         "Attach it to an existing node with parentId to build hierarchical structure. " +
         "Returns the new node with its ID (needed for future parentId references).",
       inputSchema: {

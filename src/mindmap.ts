@@ -36,6 +36,16 @@ export function addIdea(
       throw new Error(`Parent node not found: ${parentId}`);
     }
 
+    // Dedup: if an identical text already exists under the same parent, return it
+    const textNorm = text.trim().toLowerCase();
+    const existing = Object.values(map.nodes).find(
+      (n) => n.text.trim().toLowerCase() === textNorm && n.parentId === parentId
+    );
+    if (existing) {
+      console.error(`[mindkeeper] skip duplicate "${text.slice(0, 60)}" (${existing.id})`);
+      return existing;
+    }
+
     const node: MindNode = {
       id: uuidv4(),
       text,
