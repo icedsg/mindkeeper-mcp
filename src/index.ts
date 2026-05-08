@@ -11,6 +11,7 @@ import {
   deleteNode,
   searchNodes,
   getSubtree,
+  getLastSession,
   exportMarkdown,
   exportMermaid,
   exportOPML,
@@ -172,6 +173,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_last_session",
+      description:
+        "Call this at the START of every conversation to see what the user was last working on. " +
+        "Returns the most recently added or updated nodes (up to 5 by default), their tags, " +
+        "and their parent path so you know the context. Use this to greet the user with what was " +
+        "last on their mind — e.g. 'Last time you were thinking about X, want to continue?' " +
+        "Never skip this at session start if the mindmap may have content.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "Max number of recent nodes to return (default 5, max 20)",
+          },
+        },
+      },
+    },
+    {
       name: "export_json",
       description:
         "Export the full mindmap as raw JSON — the exact contents of mindmap.json. " +
@@ -304,6 +323,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           console.error(`[mindkeeper] tool get_mindmap full (${totalNodes} nodes)`);
           return ok({ tree, orphans, totalNodes });
         }
+      }
+
+      case "get_last_session": {
+        const limit = Math.min((args["limit"] as number | undefined) ?? 5, 20);
+        const session = await getLastSession(limit);
+        console.error(`[mindkeeper] tool get_last_session (${session.recentNodes.length} nodes)`);
+        return ok(session);
       }
 
       case "export_json": {

@@ -132,6 +132,42 @@ export function deleteNode(
 
 // ── Read operations (no queue needed) ────────────────────────────────────────
 
+export async function getLastSession(limit = 5): Promise<{
+  lastActive: string | null;
+  recentNodes: Array<{ id: string; text: string; tags: string[]; updatedAt: string; path: string[] }>;
+}> {
+  const map = await loadMindmap();
+  const allNodes = Object.values(map.nodes);
+  if (allNodes.length === 0) return { lastActive: null, recentNodes: [] };
+
+  const sorted = [...allNodes].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  function getPath(nodeId: string): string[] {
+    const path: string[] = [];
+    let cur = map.nodes[nodeId];
+    while (cur?.parentId) {
+      const parent = map.nodes[cur.parentId];
+      if (!parent) break;
+      path.unshift(parent.text);
+      cur = parent;
+    }
+    return path;
+  }
+
+  return {
+    lastActive: sorted[0]!.updatedAt,
+    recentNodes: sorted.slice(0, limit).map((n) => ({
+      id: n.id,
+      text: n.text,
+      tags: n.tags,
+      updatedAt: n.updatedAt,
+      path: getPath(n.id),
+    })),
+  };
+}
+
 export async function searchNodes(
   query: string
 ): Promise<Array<{ node: MindNode; score: number }>> {
