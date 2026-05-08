@@ -169,6 +169,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "export_json",
+      description:
+        "Export the full mindmap as raw JSON — the exact contents of mindmap.json. " +
+        "Use this to save a backup, import into the visualizer at the project website, or inspect the raw data structure.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
       name: "export_markdown",
       description:
         "Export the full mindmap as a Markdown nested list, ready to copy into a document or note. " +
@@ -291,6 +301,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           console.error(`[mindkeeper] tool get_mindmap full (${totalNodes} nodes)`);
           return ok({ tree, orphans, totalNodes });
         }
+      }
+
+      case "export_json": {
+        const map = await exportJSON();
+        const json = JSON.stringify(map, null, 2);
+        console.error(`[mindkeeper] tool export_json (${Object.keys(map.nodes).length} nodes)`);
+        return { content: [{ type: "text" as const, text: json }] };
       }
 
       case "export_markdown": {
