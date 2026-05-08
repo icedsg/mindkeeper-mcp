@@ -7,20 +7,95 @@
   <meta name="description" content="Import your mindmap.json and explore it with multiple open-source visualizers — all in the browser." />
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* ── Drop zone ── */
+    /* ── Drop zone layout ── */
     #dropzone-section {
       min-height: calc(100vh - 56px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 24px;
+      padding: 48px 24px;
     }
+    .import-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      max-width: 960px;
+      width: 100%;
+      align-items: center;
+    }
+    @media (max-width: 720px) {
+      .import-layout { grid-template-columns: 1fr; gap: 32px; }
+    }
+
+    /* ── Instructions ── */
+    .import-guide h2 { font-size: 1.3rem; margin-bottom: 24px; }
+    .guide-step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .guide-step strong { display: block; margin-bottom: 6px; font-size: 0.95rem; }
+    .guide-step p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 8px; }
+    .path-block {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--green);
+      margin-bottom: 6px;
+    }
+    .os-hints { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+    .os-hints span { font-size: 0.78rem; color: var(--text-muted); }
+    .os-hints code { color: var(--orange); font-family: var(--mono); font-size: 0.78rem; }
+    .prompt-chip {
+      display: inline-block;
+      background: var(--bg-alt);
+      border: 1px solid var(--purple);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: var(--purple);
+      font-style: italic;
+      margin: 6px 0 8px;
+      line-height: 1.4;
+    }
+    .claude-note {
+      display: flex;
+      gap: 10px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--orange);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 8px;
+    }
+    .claude-note-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+    .claude-note p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .claude-note em { color: var(--orange); font-style: normal; font-family: var(--mono); font-size: 0.8rem; }
+    .claude-note strong { color: var(--text); }
+
+    /* ── Drop area ── */
     .drop-area {
       border: 2px dashed var(--border);
       border-radius: 16px;
-      padding: 64px 48px;
+      padding: 48px 32px;
       text-align: center;
-      max-width: 520px;
       width: 100%;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
@@ -29,11 +104,11 @@
       border-color: var(--accent);
       background: var(--accent-glow);
     }
-    .drop-icon { font-size: 3rem; margin-bottom: 16px; }
-    .drop-area h2 { font-size: 1.4rem; margin-bottom: 8px; }
-    .drop-area p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
+    .drop-icon { font-size: 2.5rem; margin-bottom: 14px; }
+    .drop-area h2 { font-size: 1.2rem; margin-bottom: 8px; }
+    .drop-area p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
     #file-input { display: none; }
-    .drop-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 12px; }
+    .drop-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; }
 
     /* ── Viz area ── */
     #viz-section { display: none; flex-direction: column; height: calc(100vh - 56px); }
@@ -147,16 +222,62 @@
 
 <!-- ── Drop zone ── -->
 <section id="dropzone-section">
-  <div class="drop-area" id="drop-area">
-    <div class="drop-icon">🗺️</div>
-    <h2>Import your mindmap</h2>
-    <p>Drop your <code>~/.mindkeeper/mindmap.json</code> here and explore it<br>with three different open-source visualizers — no server, fully private.</p>
-    <label class="btn btn-primary" for="file-input" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/></svg>
-      Browse file
-    </label>
-    <input type="file" id="file-input" accept=".json,application/json" />
-    <p class="drop-hint">Your file never leaves your browser — all rendering is client-side.</p>
+  <div class="import-layout">
+
+    <!-- ── Instructions ── -->
+    <div class="import-guide">
+      <h2>How to get your mindmap file</h2>
+
+      <div class="guide-step">
+        <div class="step-num">1</div>
+        <div>
+          <strong>Find it directly on your filesystem</strong>
+          <p>mindkeeper saves your data locally at:</p>
+          <div class="path-block">~/.mindkeeper/mindmap.json</div>
+          <div class="os-hints">
+            <span>Mac — Finder: <code>Cmd+Shift+G</code>, paste the path above</span>
+            <span>Windows — Explorer address bar: <code>%USERPROFILE%\.mindkeeper\mindmap.json</code></span>
+            <span>Linux — <code>~/.mindkeeper/mindmap.json</code></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div>
+          <strong>Or ask Claude to hand it to you</strong>
+          <p>In any Claude session with mindkeeper-mcp running, say:</p>
+          <div class="prompt-chip">"Export my full mindmap as JSON so I can save it to a file"</div>
+          <p>Copy the JSON from the response, paste it into a text editor, and save as <code>mindmap.json</code>.</p>
+        </div>
+      </div>
+
+      <div class="claude-note">
+        <div class="claude-note-icon">💡</div>
+        <p>
+          You can also ask Claude to visualize your mindmap inline —
+          try <em>"Show me my mindmap as a Mermaid diagram"</em> or
+          <em>"Draw my mindmap as an ASCII tree"</em>.
+          <strong>But this page is better:</strong> you get zoomable, draggable,
+          multi-layout exploration that fits your whole map on one screen —
+          something a chat response can't do.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Drop area ── -->
+    <div class="drop-area" id="drop-area">
+      <div class="drop-icon">🗺️</div>
+      <h2>Import your mindmap</h2>
+      <p>Drop <code>mindmap.json</code> here or browse to it.<br>Three interactive visualizers, all in the browser.</p>
+      <label class="btn btn-primary" for="file-input" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/></svg>
+        Browse file
+      </label>
+      <input type="file" id="file-input" accept=".json,application/json" />
+      <p class="drop-hint">Your file never leaves your browser — all rendering is client-side.</p>
+    </div>
+
   </div>
 </section>
 
