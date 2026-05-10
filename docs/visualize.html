@@ -155,9 +155,6 @@
     #pane-force svg,
     #pane-tree svg { width: 100%; height: 100%; }
 
-    #pane-mindmap { background: #fff; }
-    #me-container { width: 100%; height: 100%; }
-
     /* ── D3 shared styles ── */
     .node circle {
       fill: var(--bg-card);
@@ -288,9 +285,13 @@
     <div class="tab-group">
       <button class="tab active" data-tab="force">D3 Force</button>
       <button class="tab" data-tab="tree">D3 Tree</button>
-      <button class="tab" data-tab="mindmap">mind-elixir</button>
+      <button class="tab" data-tab="mindmap">Mindmap</button>
     </div>
     <span class="viz-stats" id="viz-stats"></span>
+    <div id="export-btns" style="display:none;gap:4px;display:none;align-items:center;">
+      <button class="tab" id="btn-export-png" style="font-size:0.8rem;padding:5px 10px;">&#x1F4F7; PNG</button>
+      <button class="tab" id="btn-export-svg" style="font-size:0.8rem;padding:5px 10px;">&#x2193; SVG</button>
+    </div>
     <button id="reset-btn">✕ Load another</button>
   </div>
 
@@ -310,20 +311,26 @@
   </div>
 
   <div class="viz-pane" id="pane-mindmap">
-    <div id="me-container"></div>
+    <div id="mk-mindmap" style="width:100%;height:100%;"></div>
   </div>
 </section>
 
 <div id="error-toast"></div>
 
+<p style="position:fixed;bottom:8px;right:14px;font-size:0.68rem;color:var(--text-muted);pointer-events:none;z-index:50;">
+  Force &amp; Tree: <a href="https://d3js.org" target="_blank" rel="noopener" style="pointer-events:all;color:var(--text-muted);">D3.js</a> (ISC) ·
+  Mindmap: <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener" style="pointer-events:all;color:var(--text-muted);">mindkeeper-map.js</a> (original)
+</p>
+
 <!-- CDN libraries -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-elixir@3/dist/mind-elixir.umd.js"></script>
+<script src="./mindkeeper-map.js"></script>
 
 <script>
 /* ── State ── */
 let mindmapData = null;
-let meInstance = null;
+let mmRendered = false;
+let mmInstance = null;
 let activeTab = 'force';
 let forceSimulation = null;
 
@@ -400,12 +407,13 @@ fileInput.addEventListener('change', () => {
 document.getElementById('reset-btn').addEventListener('click', () => {
   if (forceSimulation) { forceSimulation.stop(); forceSimulation = null; }
   mindmapData = null;
-  meInstance = null;
+  mmRendered = false;
+  mmInstance = null;
   fileInput.value = '';
-  document.getElementById('me-container').innerHTML = '';
+  document.getElementById('mk-mindmap').innerHTML = '';
+  document.getElementById('export-btns').style.display = 'none';
   d3.select('#force-root').selectAll('*').remove();
   d3.select('#tree-root').selectAll('*').remove();
-  // Reset tab UI back to force
   activeTab = 'force';
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-tab="force"]').classList.add('active');
@@ -415,15 +423,23 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 });
 
 /* ── Tab switching ── */
-document.querySelectorAll('.tab').forEach(btn => {
+document.querySelectorAll('.tab[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
     activeTab = btn.dataset.tab;
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab[data-tab]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('.viz-pane').forEach(p => p.classList.remove('active'));
     document.getElementById('pane-' + activeTab).classList.add('active');
-    if (activeTab === 'mindmap' && mindmapData && !meInstance) renderMindElixir();
+    document.getElementById('export-btns').style.display = activeTab === 'mindmap' ? 'flex' : 'none';
+    if (activeTab === 'mindmap' && mindmapData && !mmRendered) renderCustomMindmap();
   });
+});
+
+document.getElementById('btn-export-png').addEventListener('click', () => {
+  if (mmInstance) mmInstance.exportPNG('mindmap.png');
+});
+document.getElementById('btn-export-svg').addEventListener('click', () => {
+  if (mmInstance) mmInstance.exportSVG('mindmap.svg');
 });
 
 /* ── View toggling ── */
@@ -441,8 +457,7 @@ function renderAll() {
 
   renderForce();
   renderTree();
-  // mind-elixir is lazy-loaded on first tab switch to avoid layout issues
-  if (activeTab === 'mindmap') renderMindElixir();
+  if (activeTab === 'mindmap') renderCustomMindmap();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -562,58 +577,34 @@ function renderTree() {
 }
 
 /* ══════════════════════════════════════════════════════
-   MIND-ELIXIR
+   MINDMAP (MindkeeperMap)
 ══════════════════════════════════════════════════════ */
-function toMENode(nodes, id, direction) {
-  const n = nodes[id];
-  if (!n) return null;
-  const children = (n.children || [])
-    .map((cid, i) => toMENode(nodes, cid, i % 2 === 0 ? 1 : 0))
-    .filter(Boolean);
-  const node = { id: n.id, topic: n.text };
-  if (direction !== undefined) node.direction = direction;
-  if (children.length) node.children = children;
-  return node;
-}
-
-function renderMindElixir() {
-  if (typeof MindElixir === 'undefined') {
-    document.getElementById('pane-mindmap').innerHTML =
-      '<p style="padding:40px;color:var(--text-muted)">mind-elixir failed to load from CDN. Check your connection.</p>';
-    return;
-  }
-
-  const container = document.getElementById('me-container');
-  container.innerHTML = '';
+function renderCustomMindmap() {
+  if (!mindmapData) return;
+  mmRendered = true;
 
   const { nodes, rootId } = mindmapData;
-  const root = rootId ? nodes[rootId] : Object.values(nodes)[0];
-  if (!root) return;
-
+  const rootNode = rootId ? nodes[rootId] : Object.values(nodes)[0];
   const orphans = Object.values(nodes).filter(n => !n.parentId && n.id !== rootId);
-  let nodeData;
 
-  if (orphans.length === 0) {
-    nodeData = toMENode(nodes, root.id);
-  } else {
-    const children = [toMENode(nodes, root.id, 1), ...orphans.map((o, i) => toMENode(nodes, o.id, i % 2))];
-    nodeData = { id: '__root__', topic: 'Mindkeeper', children };
+  function toTree(id) {
+    const n = nodes[id]; if (!n) return null;
+    const kids = (n.children || []).map(toTree).filter(Boolean);
+    const node = { id: n.id, topic: n.text };
+    if (kids.length) node.children = kids;
+    return node;
   }
 
-  try {
-    meInstance = new MindElixir({
-      el: '#me-container',
-      direction: MindElixir.SIDE,
-      draggable: false,
-      contextMenu: false,
-      toolBar: false,
-      keypress: false,
-      mouseSelectionButton: 0,
-    });
-    meInstance.init({ nodeData });
-  } catch (err) {
-    container.innerHTML = `<p style="padding:40px;color:var(--red)">mind-elixir error: ${err.message}</p>`;
+  let rootData;
+  if (!rootNode) { rootData = { topic: 'Mindkeeper (empty)', children: [] }; }
+  else if (!orphans.length) { rootData = toTree(rootNode.id); }
+  else {
+    rootData = { topic: 'Mindkeeper',
+      children: [toTree(rootNode.id), ...orphans.map(o => toTree(o.id))].filter(Boolean) };
   }
+
+  mmInstance = new MindkeeperMap('#mk-mindmap');
+  mmInstance.init(rootData);
 }
 </script>
 </body>

@@ -37,7 +37,9 @@ npm run build
 
 ### Claude Desktop
 
-Edit `claude_desktop_config.json`:
+Edit `claude_desktop_config.json`. The quickest way to open it: in Claude Desktop, go to **Settings → Developer → Edit Config**.
+
+Alternatively, find the file at:
 
 | Platform | Location |
 |---|---|
@@ -107,6 +109,8 @@ You have mindkeeper-mcp connected.
 | `export_mermaid` | Export as a Mermaid flowchart — paste into GitHub, Notion, or Obsidian |
 | `export_opml` | Export as OPML — import into MindNode, OmniOutliner, or XMind |
 | `export_json` | Export raw JSON — use with the [online visualizer](https://icedsg.github.io/mindkeeper-mcp/visualize.html) |
+| `export_html` | Generate a self-contained interactive mind-elixir HTML file saved to `~/.mindkeeper/mindmap-export.html` |
+| `import_claude_export` | Parse a `conversations.json` from Claude.ai's data export and build a mindmap from your conversation history |
 | `sync_cloud` | Push or pull the mindmap to/from a private GitHub Gist |
 | `cloud_status` | Show current cloud sync configuration |
 
@@ -217,3 +221,19 @@ cp ~/.mindkeeper/mindmap.json.bak ~/.mindkeeper/mindmap.json
 **stdio errors in Claude Desktop logs**
 
 The server logs all operations to stderr (visible in Claude Desktop's MCP logs). Normal log lines start with `[mindkeeper]`. Anything else is an unexpected error.
+
+## License & Credits
+
+MIT License — see [LICENSE](LICENSE).
+
+**Open-source dependencies:**
+
+| Package | License | Used for |
+|---|---|---|
+| [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | MCP server protocol |
+| [uuid](https://github.com/uuidjs/uuid) | MIT | Node ID generation |
+| [D3.js](https://d3js.org) | ISC | Force graph & tree views in the web visualizer |
+
+**Original work:**
+
+[`mindkeeper-map.js`](docs/mindkeeper-map.js) — the interactive mindmap renderer used in the exported HTML and web visualizer is original code with no external dependencies. Algorithms: slot-based tree layout, cubic-bezier links, canvas `measureText` node sizing, per-node drag coexisting with canvas pan.

@@ -84,7 +84,7 @@
       <div class="feature-card">
         <span class="feature-icon">🔒</span>
         <h3>Local &amp; private</h3>
-        <p>All data lives on your machine. No cloud sync, no telemetry, no API keys — just a plain JSON file you control.</p>
+        <p>All data lives on your machine in a plain JSON file you control. No telemetry. Optional cloud backup via private GitHub Gist.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">🔍</span>
@@ -110,6 +110,26 @@
         <span class="feature-icon">🔌</span>
         <h3>Works with any MCP client</h3>
         <p>Use with Claude Desktop, Claude Code, or any client implementing the Model Context Protocol.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔁</span>
+        <h3>Session resume</h3>
+        <p>Call <code>get_last_session</code> at the start of any conversation to instantly recall what was on your mind last time.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🚫</span>
+        <h3>Deduplication</h3>
+        <p>The same idea under the same parent is never added twice — no matter how many times the AI tries to capture it.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">☁️</span>
+        <h3>Cloud sync</h3>
+        <p>Push and pull your mindmap to a private GitHub Gist. Auto-creates the Gist on first push and saves the ID back to config.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <h3>Multiple export formats</h3>
+        <p>Export as Markdown, Mermaid flowchart, OPML (for MindNode / OmniOutliner), or raw JSON for the browser visualizer.</p>
       </div>
     </div>
   </div>
@@ -156,6 +176,9 @@
   }
 }</code></pre>
         <p style="margin-top:10px; font-size:0.82rem; color:var(--text-muted);">
+          Open the config via <strong style="color:var(--text);">Settings → Developer → Edit Config</strong>, or find it at <code>%APPDATA%\Claude\claude_desktop_config.json</code> (Windows) / <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS).
+        </p>
+        <p style="margin-top:8px; font-size:0.82rem; color:var(--text-muted);">
           ⚠️ <strong style="color:var(--text);">Restart Claude Desktop</strong> after saving the config — it only reads MCP servers on launch.
         </p>
       </div>
@@ -185,7 +208,7 @@
 <section id="tools">
   <div class="container">
     <p class="section-label">MCP Tools</p>
-    <h2 class="section-title">Six tools, zero friction</h2>
+    <h2 class="section-title">Fourteen tools, zero friction</h2>
     <p class="section-sub">Every tool is callable by your AI assistant. No configuration required beyond installation.</p>
 
     <div class="tools-table-wrap">
@@ -224,9 +247,49 @@
             <td>Retrieve the full tree, or a subtree from a given node</td>
           </tr>
           <tr>
+            <td><code>get_last_session</code></td>
+            <td>—</td>
+            <td>Return the most recently touched nodes — use at conversation start to resume context</td>
+          </tr>
+          <tr>
             <td><code>export_markdown</code></td>
             <td>—</td>
             <td>Export the entire mindmap as a nested Markdown list</td>
+          </tr>
+          <tr>
+            <td><code>export_mermaid</code></td>
+            <td>—</td>
+            <td>Export as a Mermaid flowchart — paste into GitHub, Notion, or Obsidian</td>
+          </tr>
+          <tr>
+            <td><code>export_opml</code></td>
+            <td>—</td>
+            <td>Export as OPML — import into MindNode, OmniOutliner, or XMind</td>
+          </tr>
+          <tr>
+            <td><code>export_json</code></td>
+            <td>—</td>
+            <td>Export raw JSON — use with the online visualizer</td>
+          </tr>
+          <tr>
+            <td><code>export_html</code></td>
+            <td>—</td>
+            <td>Generate a self-contained interactive HTML mindmap (D3, zoom + pan) saved to <code>~/.mindkeeper/mindmap-export.html</code></td>
+          </tr>
+          <tr>
+            <td><code>import_claude_export</code></td>
+            <td><code>filePath</code></td>
+            <td>Parse a <code>conversations.json</code> from Claude.ai's data export and build a mindmap from your conversation history</td>
+          </tr>
+          <tr>
+            <td><code>sync_cloud</code></td>
+            <td><code>direction</code></td>
+            <td>Push or pull the mindmap to/from a private GitHub Gist</td>
+          </tr>
+          <tr>
+            <td><code>cloud_status</code></td>
+            <td>—</td>
+            <td>Show current cloud sync configuration</td>
           </tr>
         </tbody>
       </table>
@@ -267,6 +330,15 @@
       <a href="demo.html">Demo</a>
       <a href="https://github.com/icedsg/mindkeeper-mcp/issues" target="_blank" rel="noopener">Issues</a>
     </div>
+  </div>
+  <div class="container" style="padding-bottom:28px;">
+    <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;line-height:1.8;">
+      <strong style="color:var(--text);">Open-source tools used in this project:</strong><br>
+      <a href="https://d3js.org" target="_blank" rel="noopener">D3.js</a> (ISC) — force graph &amp; tree visualizers ·
+      <a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">MCP TypeScript SDK</a> (MIT) — Model Context Protocol ·
+      <a href="https://github.com/uuidjs/uuid" target="_blank" rel="noopener">uuid</a> (MIT) — node ID generation<br>
+      <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener">mindkeeper-map.js</a> — original work, no external dependencies
+    </p>
   </div>
 </footer>
 

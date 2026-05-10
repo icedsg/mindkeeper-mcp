@@ -1,4 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
+import { readFile, writeFile } from "fs/promises";
+import { homedir, tmpdir } from "os";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { loadMindmap, saveMindmap } from "./storage.js";
 import type { MindNode, Mindmap } from "./types.js";
 
@@ -247,6 +251,105 @@ export async function exportJSON(): Promise<Mindmap> {
   return loadMindmap();
 }
 
+export async function exportHTML(): Promise<{ filePath: string; nodeCount: number }> {
+  const map = await loadMindmap();
+  const nodeCount = Object.keys(map.nodes).length;
+  const generatedAt = new Date().toLocaleString();
+  const inlinedData = JSON.stringify(map);
+
+  // Read library from docs/ — single source of truth, also served on GH Pages
+  const libPath = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "mindkeeper-map.js");
+  const librarySource = await readFile(libPath, "utf-8");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mindmap — mindkeeper</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #f8f9fb; }
+    #map { width: 100%; height: 100%; }
+    #toolbar {
+      position: fixed; top: 14px; right: 14px;
+      background: rgba(255,255,255,0.93); border: 1px solid #e1e4e8;
+      border-radius: 10px; padding: 8px 16px; font-size: 11.5px; color: #6e7681;
+      z-index: 100; backdrop-filter: blur(8px); display: flex; align-items: center;
+      gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.10); user-select: none;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #toolbar b { color: #24292f; font-size: 13px; }
+    #toolbar .sep { color: #d0d7de; }
+    #toolbar button {
+      border: 1px solid #d0d7de; border-radius: 6px;
+      background: transparent; padding: 3px 9px;
+      font-size: 11px; color: #24292f; cursor: pointer; font-family: inherit;
+    }
+    #toolbar button:hover { background: #f3f4f6; border-color: #b0b8c3; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="toolbar">
+    <b>&#x1F9E0; mindkeeper</b>
+    <span class="sep">&#xB7;</span>
+    <span>${nodeCount} node${nodeCount !== 1 ? "s" : ""}</span>
+    <span class="sep">&#xB7;</span>
+    <span>${generatedAt}</span>
+    <span class="sep">&#xB7;</span>
+    <span>Scroll to zoom &middot; Drag nodes or background</span>
+    <span class="sep">&#xB7;</span>
+    <button id="btn-png">&#x1F4F7; PNG</button>
+    <button id="btn-svg">&#x2193; SVG</button>
+  </div>
+  <script>
+${librarySource}
+  </script>
+  <script>
+    var MAP = ${inlinedData};
+
+    function toTree(nodes, id) {
+      var n = nodes[id];
+      if (!n) return null;
+      var kids = (n.children || []).map(function(cid) { return toTree(nodes, cid); }).filter(Boolean);
+      var node = { id: n.id, topic: n.text };
+      if (kids.length) node.children = kids;
+      return node;
+    }
+
+    var nodes = MAP.nodes;
+    var rootId = MAP.rootId;
+    var rootNode = rootId ? nodes[rootId] : Object.values(nodes)[0];
+    var orphans = Object.values(nodes).filter(function(n) { return !n.parentId && n.id !== rootId; });
+
+    var data;
+    if (!rootNode) {
+      data = { id: 'empty', topic: 'Mindkeeper (empty)', children: [] };
+    } else if (!orphans.length) {
+      data = toTree(nodes, rootNode.id);
+    } else {
+      data = {
+        id: '__root__', topic: 'Mindkeeper',
+        children: [toTree(nodes, rootNode.id)]
+          .concat(orphans.map(function(o) { return toTree(nodes, o.id); }))
+          .filter(Boolean)
+      };
+    }
+
+    var mm = new MindkeeperMap('#map');
+    mm.init(data);
+    document.getElementById('btn-png').onclick = function() { mm.exportPNG('mindmap.png'); };
+    document.getElementById('btn-svg').onclick = function() { mm.exportSVG('mindmap.svg'); };
+  </script>
+</body>
+</html>`;
+
+  const outPath = join(homedir(), ".mindkeeper", "mindmap-export.html");
+  await writeFile(outPath, html, "utf-8");
+  return { filePath: outPath, nodeCount };
+}
+
 export async function exportMermaid(): Promise<string> {
   const map = await loadMindmap();
 
@@ -327,4 +430,111 @@ export async function exportOPML(): Promise<string> {
 
   parts.push("  </body>", "</opml>");
   return parts.join("\n");
+}
+
+// ── Claude.ai export format (undocumented — handle multiple known variants) ──
+
+interface ClaudeExportMessage {
+  sender?: string;       // "human" | "assistant" (older) or "user" | "assistant" (newer)
+  text?: string;         // flat text field (older format)
+  content?: string | Array<{ type: string; text?: string }>; // newer format
+  created_at?: string;
+}
+
+interface ClaudeExportConversation {
+  uuid?: string;
+  name?: string;
+  created_at?: string;
+  updated_at?: string;
+  chat_messages?: ClaudeExportMessage[];  // older key
+  chat_history?: ClaudeExportMessage[];   // newer key
+}
+
+function extractMessageText(msg: ClaudeExportMessage): string {
+  if (typeof msg.text === "string" && msg.text.trim()) return msg.text.trim();
+  if (typeof msg.content === "string" && msg.content.trim()) return msg.content.trim();
+  if (Array.isArray(msg.content)) {
+    const block = msg.content.find((b) => b.type === "text" && b.text);
+    if (block?.text) return block.text.trim();
+  }
+  return "";
+}
+
+function isHuman(msg: ClaudeExportMessage): boolean {
+  return msg.sender === "human" || msg.sender === "user";
+}
+
+export async function importClaudeExport(filePath: string): Promise<{
+  conversationCount: number;
+  shown: number;
+  conversations: Array<{
+    title: string;
+    date: string;
+    turns: number;
+    preview: string;
+  }>;
+  note: string;
+}> {
+  let raw: string;
+  try {
+    raw = await readFile(filePath, "utf-8");
+  } catch {
+    throw new Error(`Cannot read file: ${filePath}. Check the path is correct and the file exists.`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("File is not valid JSON. Make sure you are pointing to conversations.json, not the ZIP.");
+  }
+
+  // Normalise: Claude.ai exports either a bare array or { conversations: [...] }
+  let rawList: ClaudeExportConversation[];
+  if (Array.isArray(parsed)) {
+    rawList = parsed as ClaudeExportConversation[];
+  } else if (
+    parsed !== null &&
+    typeof parsed === "object" &&
+    Array.isArray((parsed as Record<string, unknown>)["conversations"])
+  ) {
+    rawList = (parsed as Record<string, unknown>)["conversations"] as ClaudeExportConversation[];
+  } else {
+    throw new Error(
+      "Unrecognised format. Expected a JSON array or { conversations: [...] }. " +
+        "Make sure you are using the conversations.json from the Claude.ai data export."
+    );
+  }
+
+  // Sort newest-updated first
+  const sorted = [...rawList].sort((a, b) => {
+    const ad = a.updated_at ?? a.created_at ?? "";
+    const bd = b.updated_at ?? b.created_at ?? "";
+    return bd.localeCompare(ad);
+  });
+
+  const conversations = sorted.map((conv) => {
+    const messages: ClaudeExportMessage[] = conv.chat_messages ?? conv.chat_history ?? [];
+    const humanMsgs = messages.filter(isHuman);
+    const firstText = humanMsgs[0] ? extractMessageText(humanMsgs[0]) : "";
+    const preview = firstText.slice(0, 160) + (firstText.length > 160 ? "…" : "");
+
+    return {
+      title: (conv.name ?? "(untitled)").trim(),
+      date: (conv.created_at ?? conv.updated_at ?? "").slice(0, 10),
+      turns: messages.length,
+      preview,
+    };
+  });
+
+  const shown = Math.min(conversations.length, 80);
+  return {
+    conversationCount: rawList.length,
+    shown,
+    conversations: conversations.slice(0, shown),
+    note:
+      rawList.length > 80
+        ? `Showing ${shown} most recent of ${rawList.length} total. Consider filtering by date or topic before importing all.`
+        : `All ${rawList.length} conversations included above.`,
+  };
 }

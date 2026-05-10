@@ -16,6 +16,8 @@ import {
   exportMermaid,
   exportOPML,
   exportJSON,
+  exportHTML,
+  importClaudeExport,
 } from "./mindmap.js";
 import {
   loadConfig,
@@ -231,6 +233,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "export_html",
+      description:
+        "Generate a self-contained HTML file that renders the mindmap as an interactive visual diagram. " +
+        "The file is saved to ~/.mindkeeper/mindmap-export.html and the full path is returned. " +
+        "After calling this tool, tell the user to open the file in their browser — no server required. " +
+        "The diagram is interactive: draggable, zoomable, with curved connections and a SIDE layout.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "import_claude_export",
+      description:
+        "Read a conversations.json file exported from Claude.ai and return a structured list of conversations. " +
+        "The user must first download their data at claude.ai → Settings → Account → Export Data, " +
+        "unzip the archive, and provide the path to conversations.json. " +
+        "After calling this tool, YOU (the AI) must analyze the returned conversation list and: " +
+        "1) identify major topic clusters across the conversations, " +
+        "2) call add_idea to create a root topic node for each cluster, " +
+        "3) call add_idea to add notable sub-topics or recurring themes as children, " +
+        "4) skip trivial, one-off, or very short conversations. " +
+        "Group by theme, not by conversation title. Aim for a clean, meaningful mindmap hierarchy. " +
+        "When done, call export_html so the user can visualize the result.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filePath: {
+            type: "string",
+            description:
+              "Absolute path to the conversations.json file from the Claude.ai data export. " +
+              "Windows example: C:\\Users\\name\\Downloads\\conversations.json. " +
+              "Mac/Linux example: /Users/name/Downloads/conversations.json",
+          },
+        },
+        required: ["filePath"],
+      },
+    },
+    {
       name: "sync_cloud",
       description:
         "Sync the mindmap with GitHub Gist cloud storage. " +
@@ -355,6 +396,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const opml = await exportOPML();
         console.error(`[mindkeeper] tool export_opml (${opml.length} chars)`);
         return { content: [{ type: "text" as const, text: opml }] };
+      }
+
+      case "export_html": {
+        const result = await exportHTML();
+        console.error(`[mindkeeper] tool export_html -> ${result.filePath}`);
+        return ok({
+          filePath: result.filePath,
+          nodeCount: result.nodeCount,
+          message: `Mindmap HTML written to ${result.filePath}. Open this file in your browser to view the interactive diagram (D3, zoom + pan enabled).`,
+        });
+      }
+
+      case "import_claude_export": {
+        const filePath = args["filePath"] as string;
+        const result = await importClaudeExport(filePath);
+        console.error(
+          `[mindkeeper] tool import_claude_export ${result.conversationCount} convs from ${filePath}`
+        );
+        return ok(result);
       }
 
       case "sync_cloud": {
