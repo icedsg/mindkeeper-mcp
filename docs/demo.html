@@ -7,25 +7,7 @@
   <meta name="description" content="Interactive mindmap demo for mindkeeper-mcp — see the D3.js visualization and JSON schema." />
   <link rel="stylesheet" href="style.css" />
   <style>
-    #mindmap-canvas { cursor: grab; }
-    #mindmap-canvas:active { cursor: grabbing; }
-    .node circle {
-      stroke-width: 2;
-      transition: r 0.15s;
-    }
-    .node text {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 12px;
-      fill: #e6edf3;
-      pointer-events: none;
-      user-select: none;
-    }
-    .link {
-      fill: none;
-      stroke: #30363d;
-      stroke-width: 1.5;
-    }
-    .node--root circle { r: 20; }
+    #mk-demo { width: 100%; height: 480px; }
   </style>
 </head>
 <body>
@@ -52,7 +34,7 @@
     <p class="section-label">Interactive Demo</p>
     <h2 class="section-title">Mindmap visualization</h2>
     <p class="section-sub">
-      A live force-directed graph of a sample mindmap. Click any node to inspect its data.
+      A live interactive mindmap of sample data, rendered by mindkeeper-map.js.
       Drag nodes to rearrange. Scroll to zoom.
     </p>
   </div>
@@ -61,44 +43,28 @@
 <!-- ── Main demo layout ── -->
 <section style="padding-top: 32px;">
   <div class="container">
-    <div class="demo-layout">
+    <div class="demo-layout" style="grid-template-columns: 1fr; gap: 24px;">
 
-      <!-- Graph canvas -->
+      <!-- Mindmap canvas -->
       <div class="demo-panel">
         <div class="panel-header">
           <div class="dot"></div>
-          Force-directed mindmap — click a node to inspect
+          Interactive mindmap — drag nodes, scroll to zoom
         </div>
-        <svg id="mindmap-canvas"></svg>
+        <div id="mk-demo"></div>
       </div>
 
-      <!-- Side panel -->
-      <div style="display:flex; flex-direction:column; gap:16px;">
+    </div>
 
-        <!-- Node detail -->
-        <div class="demo-panel">
-          <div class="panel-header">
-            <div class="dot"></div>
-            Node data
-          </div>
-          <div class="panel-body">
-            <div class="node-info" id="node-hint">
-              Click any node in the graph to inspect its JSON representation.
-            </div>
-            <div id="node-detail">
-              <pre id="node-json"></pre>
-            </div>
-          </div>
+    <!-- Schema reference -->
+    <div style="margin-top: 24px;">
+      <div class="demo-panel">
+        <div class="panel-header">
+          <div class="dot" style="background:var(--purple)"></div>
+          MindNode schema
         </div>
-
-        <!-- Schema reference -->
-        <div class="demo-panel">
-          <div class="panel-header">
-            <div class="dot" style="background:var(--purple)"></div>
-            MindNode schema
-          </div>
-          <div class="panel-body">
-            <pre><code>{
+        <div class="panel-body">
+          <pre><code>{
   <span class="tok-key">"id"</span>: <span class="tok-str">"uuid-string"</span>,
   <span class="tok-key">"text"</span>: <span class="tok-str">"string"</span>,
   <span class="tok-key">"parentId"</span>: <span class="tok-str">"uuid | null"</span>,
@@ -107,7 +73,6 @@
   <span class="tok-key">"createdAt"</span>: <span class="tok-str">"ISO 8601"</span>,
   <span class="tok-key">"updatedAt"</span>: <span class="tok-str">"ISO 8601"</span>
 }</code></pre>
-          </div>
         </div>
       </div>
     </div>
@@ -209,15 +174,13 @@
   </div>
   <div class="container" style="padding-bottom:28px;">
     <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;line-height:1.8;">
-      <strong style="color:var(--text);">Open-source tools used on this page:</strong><br>
-      <a href="https://d3js.org" target="_blank" rel="noopener">D3.js</a> (ISC) — force-directed graph visualization
+      Visualization powered by <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener">mindkeeper-map.js</a> — original work, no external dependencies.
     </p>
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="./mindkeeper-map.js"></script>
 <script>
-// ── Sample data ──────────────────────────────────────────────────────────────
 const SAMPLE = {
   rootId: "n1",
   nodes: {
@@ -232,7 +195,6 @@ const SAMPLE = {
   }
 };
 
-// ── Render full JSON ──────────────────────────────────────────────────────────
 function syntaxHighlight(json) {
   return json
     .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, m => `<span class="tok-str">${m}</span>`)
@@ -242,89 +204,15 @@ function syntaxHighlight(json) {
 document.getElementById("full-json").innerHTML =
   syntaxHighlight(JSON.stringify(SAMPLE, null, 2));
 
-// ── Build D3 tree ─────────────────────────────────────────────────────────────
-const nodes = Object.values(SAMPLE.nodes);
-const links = nodes
-  .filter(n => n.parentId)
-  .map(n => ({ source: n.parentId, target: n.id }));
-
-const colors = {
-  0: "#58a6ff",
-  1: "#3fb950",
-  2: "#bc8cff",
-  3: "#ffa657",
-};
-function depth(id, d = 0) {
-  const n = SAMPLE.nodes[id];
-  if (!n || !n.parentId) return d;
-  return depth(n.parentId, d + 1);
+function toTree(id) {
+  const n = SAMPLE.nodes[id]; if (!n) return null;
+  const kids = (n.children || []).map(toTree).filter(Boolean);
+  const node = { id: n.id, topic: n.text };
+  if (kids.length) node.children = kids;
+  return node;
 }
 
-const svg = d3.select("#mindmap-canvas");
-const rect = document.getElementById("mindmap-canvas").getBoundingClientRect();
-const W = rect.width || 600;
-const H = 520;
-svg.attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("height", H);
-
-const g = svg.append("g");
-
-svg.call(
-  d3.zoom().scaleExtent([0.3, 3]).on("zoom", e => g.attr("transform", e.transform))
-);
-
-const sim = d3.forceSimulation(nodes)
-  .force("link", d3.forceLink(links).id(d => d.id).distance(90))
-  .force("charge", d3.forceManyBody().strength(-350))
-  .force("center", d3.forceCenter(W / 2, H / 2))
-  .force("collide", d3.forceCollide(40));
-
-const link = g.append("g")
-  .selectAll("line")
-  .data(links)
-  .join("line")
-  .attr("class", "link");
-
-const node = g.append("g")
-  .selectAll("g")
-  .data(nodes)
-  .join("g")
-  .attr("class", "node")
-  .call(
-    d3.drag()
-      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
-      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
-  )
-  .on("click", (e, d) => {
-    const detail = document.getElementById("node-detail");
-    const hint   = document.getElementById("node-hint");
-    const pre    = document.getElementById("node-json");
-    hint.style.display = "none";
-    detail.classList.add("visible");
-    pre.innerHTML = syntaxHighlight(JSON.stringify(d, null, 2));
-    node.selectAll("circle").attr("stroke", nd =>
-      nd.id === d.id ? "#fff" : colors[depth(nd.id) % 4]
-    );
-  });
-
-node.append("circle")
-  .attr("r", d => d.parentId === null ? 22 : d.children.length ? 16 : 10)
-  .attr("fill", d => colors[depth(d.id) % 4] + "22")
-  .attr("stroke", d => colors[depth(d.id) % 4]);
-
-node.append("text")
-  .attr("dy", d => (d.parentId === null ? 36 : 28))
-  .attr("text-anchor", "middle")
-  .attr("font-size", d => d.parentId === null ? 13 : 11)
-  .attr("font-weight", d => d.parentId === null ? 700 : 400)
-  .text(d => d.text.length > 22 ? d.text.slice(0, 20) + "…" : d.text);
-
-sim.on("tick", () => {
-  link
-    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-  node.attr("transform", d => `translate(${d.x},${d.y})`);
-});
+new MindkeeperMap('#mk-demo').init(toTree(SAMPLE.rootId));
 </script>
 
 </body>
