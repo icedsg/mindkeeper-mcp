@@ -1,6 +1,6 @@
 {
   "name": "mindkeeper-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap",
   "main": "build/index.js",
   "type": "module",

@@ -1,6 +1,6 @@
 # mindkeeper-mcp
 
-An MCP server that captures ideas from conversations and organises them into a persistent mindmap. Each idea is stored as a node that can be linked to a parent, tagged, searched, and exported — surviving across sessions.
+An MCP server that captures ideas from conversations and organises them into a persistent mindmap. Ideas are stored as nodes that can be linked to a parent, tagged, searched, exported, and synced to the cloud — surviving across sessions.
 
 Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic backups.
 
@@ -9,9 +9,12 @@ Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic 
 - **Persistent** — mindmap survives across conversations and restarts
 - **Hierarchical** — nest ideas under parents to build tree structure
 - **Searchable** — weighted full-text search across text and tags
+- **Deduplication** — same idea under the same parent is never added twice
+- **Session resume** — recall what was last discussed at the start of any conversation
 - **Safe writes** — atomic temp-file → backup → rename strategy
 - **Concurrency-safe** — serialised write queue prevents file corruption
-- **Export** — Markdown nested list or raw JSON
+- **Export** — Markdown, Mermaid diagram, OPML, or raw JSON
+- **Cloud sync** — backup and restore via private GitHub Gist
 
 ## Installation
 
@@ -24,7 +27,7 @@ npm install -g mindkeeper-mcp
 ### Local install
 
 ```bash
-git clone https://github.com/your-username/mindkeeper-mcp
+git clone https://github.com/icedsg/mindkeeper-mcp
 cd mindkeeper-mcp
 npm install
 npm run build
@@ -67,6 +70,8 @@ Edit `claude_desktop_config.json`:
 }
 ```
 
+After editing the config, **restart Claude Desktop** for the server to connect.
+
 ### Claude Code (CLI)
 
 ```bash
@@ -75,6 +80,17 @@ claude mcp add mindkeeper -- mindkeeper-mcp
 
 # Local install
 claude mcp add mindkeeper -- node /path/to/mindkeeper-mcp/build/index.js
+```
+
+## Automatic topic capture (recommended)
+
+Add this to your Claude Desktop system prompt (Settings → Profile → Custom Instructions) to make mindkeeper capture your topics automatically:
+
+```
+You have mindkeeper-mcp connected.
+- At the start of every conversation, call get_last_session and briefly say what was last on my mind.
+- After each of my messages, if I mention a new topic, question, goal, or interest — call add_idea to record it. Only capture what I say, never your own responses.
+- Before adding, call search_ideas to avoid duplicates.
 ```
 
 ## Tools
@@ -86,7 +102,13 @@ claude mcp add mindkeeper -- node /path/to/mindkeeper-mcp/build/index.js
 | `delete_node` | Remove an idea; children are orphaned (kept, not deleted) |
 | `search_ideas` | Full-text search across idea text and tags |
 | `get_mindmap` | Retrieve the full tree, or a subtree from a given node |
-| `export_markdown` | Export the mindmap as a nested Markdown list |
+| `get_last_session` | Return the most recently touched nodes — use at conversation start to resume context |
+| `export_markdown` | Export as a nested Markdown list |
+| `export_mermaid` | Export as a Mermaid flowchart — paste into GitHub, Notion, or Obsidian |
+| `export_opml` | Export as OPML — import into MindNode, OmniOutliner, or XMind |
+| `export_json` | Export raw JSON — use with the [online visualizer](https://icedsg.github.io/mindkeeper-mcp/visualize.html) |
+| `sync_cloud` | Push or pull the mindmap to/from a private GitHub Gist |
+| `cloud_status` | Show current cloud sync configuration |
 
 ## Usage examples
 
@@ -115,10 +137,39 @@ search_ideas  query="EU launch"
 get_mindmap
 ```
 
+**Resume where you left off:**
+```
+get_last_session
+```
+
 **Export for a document:**
 ```
 export_markdown
 ```
+
+**Visualize in the browser:**
+```
+export_json   # copy the output, drop it into the visualizer
+```
+
+## Cloud sync
+
+Create `~/.mindkeeper/config.json`:
+
+```json
+{
+  "cloud": {
+    "provider": "github_gist",
+    "token": "ghp_YOUR_PERSONAL_ACCESS_TOKEN"
+  }
+}
+```
+
+Generate a token at [github.com/settings/tokens](https://github.com/settings/tokens) with the `gist` scope. The first `sync_cloud direction="push"` auto-creates a private Gist and saves the `gistId` back to config.
+
+## Visualizer
+
+Export your mindmap as JSON and drop it into the browser-based visualizer at [icedsg.github.io/mindkeeper-mcp/visualize.html](https://icedsg.github.io/mindkeeper-mcp/visualize.html) for zoomable, draggable, multi-layout exploration.
 
 ## Data storage
 
