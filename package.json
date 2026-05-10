@@ -1,6 +1,6 @@
 {
   "name": "mindkeeper-mcp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap",
   "main": "build/index.js",
   "type": "module",
@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@resvg/resvg-js": "^2.6.2",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

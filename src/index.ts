@@ -11,14 +11,11 @@ import {
   deleteNode,
   searchNodes,
   getSubtree,
-  getLastSession,
   exportMarkdown,
   exportMermaid,
   exportOPML,
   exportJSON,
   exportHTML,
-  exportSVG,
-  exportPNG,
   importClaudeExport,
 } from "./mindmap.js";
 import {
@@ -177,24 +174,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "get_last_session",
-      description:
-        "Call this at the START of every conversation to see what the user was last working on. " +
-        "Returns the most recently added or updated nodes (up to 5 by default), their tags, " +
-        "and their parent path so you know the context. Use this to greet the user with what was " +
-        "last on their mind — e.g. 'Last time you were thinking about X, want to continue?' " +
-        "Never skip this at session start if the mindmap may have content.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          limit: {
-            type: "number",
-            description: "Max number of recent nodes to return (default 5, max 20)",
-          },
-        },
-      },
-    },
-    {
       name: "export_json",
       description:
         "Export the full mindmap as raw JSON — the exact contents of mindmap.json. " +
@@ -237,34 +216,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "export_html",
       description:
-        "Generate a self-contained HTML file that renders the mindmap as an interactive visual diagram. " +
-        "The file is saved to ~/.mindkeeper/mindmap-export.html and the full path is returned. " +
+        "Generate a self-contained interactive HTML mindmap and save it to ~/.mindkeeper/mindmap-export.html. " +
         "After calling this tool, tell the user to open the file in their browser — no server required. " +
-        "The diagram is interactive: draggable, zoomable, with curved connections and a SIDE layout.",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-    },
-    {
-      name: "export_svg",
-      description:
-        "Export the mindmap as a static SVG vector image. " +
-        "The file is saved to ~/.mindkeeper/mindmap-export.svg. " +
-        "SVG files open in any browser, Figma, Inkscape, or can be embedded in documents. " +
-        "Uses the same alternating left/right layout as the interactive HTML viewer.",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-    },
-    {
-      name: "export_png",
-      description:
-        "Export the mindmap as a PNG raster image. " +
-        "The file is saved to ~/.mindkeeper/mindmap-export.png. " +
-        "PNG is ready to paste into docs, slides, or share directly. " +
-        "Uses the same layout as the interactive HTML viewer.",
+        "The diagram is draggable, zoomable, and uses a side-branch layout with curved connections. " +
+        "The toolbar inside the HTML has buttons to download the diagram as PNG or SVG.",
       inputSchema: {
         type: "object",
         properties: {},
@@ -392,12 +347,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
       }
 
-      case "get_last_session": {
-        const limit = Math.min((args["limit"] as number | undefined) ?? 5, 20);
-        const session = await getLastSession(limit);
-        console.error(`[mindkeeper] tool get_last_session (${session.recentNodes.length} nodes)`);
-        return ok(session);
-      }
 
       case "export_json": {
         const map = await exportJSON();
@@ -430,25 +379,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return ok({
           filePath: result.filePath,
           nodeCount: result.nodeCount,
-          message: `Mindmap HTML written to ${result.filePath}. Open this file in your browser to view the interactive diagram.`,
-        });
-      }
-
-      case "export_svg": {
-        const result = await exportSVG();
-        return ok({
-          filePath: result.filePath,
-          nodeCount: result.nodeCount,
-          message: `Mindmap SVG written to ${result.filePath}. Open in any browser, Figma, or Inkscape.`,
-        });
-      }
-
-      case "export_png": {
-        const result = await exportPNG();
-        return ok({
-          filePath: result.filePath,
-          nodeCount: result.nodeCount,
-          message: `Mindmap PNG written to ${result.filePath}. Ready to paste into docs or slides.`,
+          message: `Mindmap HTML written to ${result.filePath}. Open in your browser — drag, zoom, and use the toolbar to download PNG or SVG.`,
         });
       }
 

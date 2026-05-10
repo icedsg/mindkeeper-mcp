@@ -10,10 +10,10 @@ Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic 
 - **Hierarchical** — nest ideas under parents to build tree structure
 - **Searchable** — weighted full-text search across text and tags
 - **Deduplication** — same idea under the same parent is never added twice
-- **Session resume** — recall what was last discussed at the start of any conversation
 - **Safe writes** — atomic temp-file → backup → rename strategy
 - **Concurrency-safe** — serialised write queue prevents file corruption
-- **Export** — Markdown, Mermaid diagram, OPML, JSON, interactive HTML, SVG, or PNG
+- **Export** — Markdown, Mermaid diagram, OPML, JSON, or interactive HTML (with PNG/SVG download)
+- **Import** — build a mindmap from your Claude.ai conversation history
 - **Cloud sync** — backup and restore via private GitHub Gist
 
 ## Installation
@@ -90,7 +90,6 @@ Add this to your Claude Desktop system prompt (Settings → Profile → Custom I
 
 ```
 You have mindkeeper-mcp connected.
-- At the start of every conversation, call get_last_session and briefly say what was last on my mind.
 - After each of my messages, if I mention a new topic, question, goal, or interest — call add_idea to record it. Only capture what I say, never your own responses.
 - Before adding, call search_ideas to avoid duplicates.
 ```
@@ -104,14 +103,11 @@ You have mindkeeper-mcp connected.
 | `delete_node` | Remove an idea; children are orphaned (kept, not deleted) |
 | `search_ideas` | Full-text search across idea text and tags |
 | `get_mindmap` | Retrieve the full tree, or a subtree from a given node |
-| `get_last_session` | Return the most recently touched nodes — use at conversation start to resume context |
 | `export_markdown` | Export as a nested Markdown list |
 | `export_mermaid` | Export as a Mermaid flowchart — paste into GitHub, Notion, or Obsidian |
 | `export_opml` | Export as OPML — import into MindNode, OmniOutliner, or XMind |
 | `export_json` | Export raw JSON — use with the [online visualizer](https://icedsg.github.io/mindkeeper-mcp/visualize.html) |
-| `export_html` | Generate a self-contained interactive HTML file saved to `~/.mindkeeper/mindmap-export.html` — open in browser, drag, zoom |
-| `export_svg` | Export as a static SVG vector image to `~/.mindkeeper/mindmap-export.svg` — open in browser, Figma, or Inkscape |
-| `export_png` | Export as a PNG raster image to `~/.mindkeeper/mindmap-export.png` — ready to paste into docs or slides |
+| `export_html` | Generate a self-contained interactive HTML file saved to `~/.mindkeeper/mindmap-export.html` — open in browser, drag, zoom, export PNG or SVG |
 | `import_claude_export` | Parse a `conversations.json` from Claude.ai's data export and build a mindmap from your conversation history |
 | `sync_cloud` | Push or pull the mindmap to/from a private GitHub Gist |
 | `cloud_status` | Show current cloud sync configuration |
@@ -143,19 +139,19 @@ search_ideas  query="EU launch"
 get_mindmap
 ```
 
-**Resume where you left off:**
-```
-get_last_session
-```
-
 **Export for a document:**
 ```
 export_markdown
 ```
 
-**Visualize in the browser:**
+**Visualize interactively:**
 ```
-export_json   # copy the output, drop it into the visualizer
+export_html   # opens in browser — drag, zoom, download PNG or SVG from the toolbar
+```
+
+**Or paste into an online renderer:**
+```
+export_json   # drop the output into the visualizer at the project website
 ```
 
 ## Cloud sync
@@ -208,13 +204,7 @@ Claude reads every conversation, clusters them by theme, and populates the mindm
 Export the mindmap as HTML
 ```
 
-or for a static image:
-
-```
-Export the mindmap as PNG
-```
-
-The HTML file is saved to `~/.mindkeeper/mindmap-export.html` and opens in any browser — no server needed. The PNG and SVG files land in the same folder.
+The HTML file is saved to `~/.mindkeeper/mindmap-export.html` and opens in any browser — no server needed. Inside the file, use the toolbar buttons to download a **PNG** or **SVG** image.
 
 ## Data storage
 
@@ -273,7 +263,6 @@ MIT License — see [LICENSE](LICENSE).
 |---|---|---|
 | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | MCP server protocol |
 | [uuid](https://github.com/uuidjs/uuid) | MIT | Node ID generation |
-| [@resvg/resvg-js](https://github.com/nicolo-ribaudo/resvg-js) | MIT | SVG → PNG rasterization for `export_png` |
 | [D3.js](https://d3js.org) | ISC | Force graph & tree views in the web visualizer |
 
 **Original work:**
