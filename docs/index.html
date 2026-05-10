@@ -112,9 +112,9 @@
         <p>Use with Claude Desktop, Claude Code, or any client implementing the Model Context Protocol.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🔁</span>
-        <h3>Session resume</h3>
-        <p>Call <code>get_last_session</code> at the start of any conversation to instantly recall what was on your mind last time.</p>
+        <span class="feature-icon">🌐</span>
+        <h3>Browser visualizer</h3>
+        <p>Drop your <code>mindmap.json</code> on the <a href="visualize.html">Visualize</a> page for an interactive, zoomable mindmap — no install required, fully client-side.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">🚫</span>
@@ -208,7 +208,7 @@
 <section id="tools">
   <div class="container">
     <p class="section-label">MCP Tools</p>
-    <h2 class="section-title">Fourteen tools, zero friction</h2>
+    <h2 class="section-title">Thirteen tools, zero friction</h2>
     <p class="section-sub">Every tool is callable by your AI assistant. No configuration required beyond installation.</p>
 
     <div class="tools-table-wrap">
@@ -247,11 +247,6 @@
             <td>Retrieve the full tree, or a subtree from a given node</td>
           </tr>
           <tr>
-            <td><code>get_last_session</code></td>
-            <td>—</td>
-            <td>Return the most recently touched nodes — use at conversation start to resume context</td>
-          </tr>
-          <tr>
             <td><code>export_markdown</code></td>
             <td>—</td>
             <td>Export the entire mindmap as a nested Markdown list</td>
@@ -274,7 +269,7 @@
           <tr>
             <td><code>export_html</code></td>
             <td>—</td>
-            <td>Generate a self-contained interactive HTML mindmap (D3, zoom + pan) saved to <code>~/.mindkeeper/mindmap-export.html</code></td>
+            <td>Generate a self-contained interactive HTML mindmap (zoom + pan, PNG/SVG export) saved to <code>~/.mindkeeper/mindmap-export.html</code></td>
           </tr>
           <tr>
             <td><code>import_claude_export</code></td>
@@ -334,10 +329,10 @@
   <div class="container" style="padding-bottom:28px;">
     <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;line-height:1.8;">
       <strong style="color:var(--text);">Open-source tools used in this project:</strong><br>
-      <a href="https://d3js.org" target="_blank" rel="noopener">D3.js</a> (ISC) — force graph &amp; tree visualizers ·
+      <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener">mindkeeper-map.js</a> — interactive mindmap renderer, original work, no external dependencies ·
       <a href="https://github.com/modelcontextprotocol/typescript-sdk" target="_blank" rel="noopener">MCP TypeScript SDK</a> (MIT) — Model Context Protocol ·
       <a href="https://github.com/uuidjs/uuid" target="_blank" rel="noopener">uuid</a> (MIT) — node ID generation<br>
-      <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener">mindkeeper-map.js</a> — original work, no external dependencies
+      <a href="https://d3js.org" target="_blank" rel="noopener">D3.js</a> (ISC) — demo page visualization
     </p>
   </div>
 </footer>

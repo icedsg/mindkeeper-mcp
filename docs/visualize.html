@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visualize — mindkeeper-mcp</title>
-  <meta name="description" content="Import your mindmap.json and explore it with multiple open-source visualizers — all in the browser." />
+  <meta name="description" content="Import your mindmap.json and explore it as an interactive mindmap — all in the browser." />
   <link rel="stylesheet" href="style.css" />
   <style>
     /* ── Drop zone layout ── */
@@ -123,7 +123,6 @@
       flex-wrap: wrap;
     }
     .viz-title { font-weight: 600; font-size: 0.95rem; margin-right: 4px; }
-    .tab-group { display: flex; gap: 4px; }
     .tab {
       padding: 6px 14px;
       border-radius: 6px;
@@ -135,7 +134,6 @@
       transition: all 0.15s;
     }
     .tab:hover { border-color: var(--accent); color: var(--text); }
-    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
     .viz-stats { color: var(--text-muted); font-size: 0.82rem; margin-left: auto; }
     #reset-btn {
       padding: 5px 12px;
@@ -148,42 +146,8 @@
     }
     #reset-btn:hover { border-color: var(--red); color: var(--red); }
 
-    /* ── Viz containers ── */
-    .viz-pane { display: none; flex: 1; overflow: hidden; }
-    .viz-pane.active { display: flex; }
-
-    #pane-force svg,
-    #pane-tree svg { width: 100%; height: 100%; }
-
-    /* ── D3 shared styles ── */
-    .node circle {
-      fill: var(--bg-card);
-      stroke: var(--accent);
-      stroke-width: 2px;
-      cursor: pointer;
-      transition: r 0.15s;
-    }
-    .node circle:hover { fill: var(--accent-glow); }
-    .node text {
-      fill: var(--text);
-      font-size: 12px;
-      font-family: var(--font);
-      pointer-events: none;
-      paint-order: stroke;
-      stroke: var(--bg);
-      stroke-width: 3px;
-    }
-    .link {
-      fill: none;
-      stroke: var(--border);
-      stroke-width: 1.5px;
-    }
-    .link-force { stroke: var(--border); stroke-width: 1.5px; marker-end: url(#arrow); }
-    .tag-pill {
-      fill: var(--bg-alt);
-      stroke: var(--purple);
-      stroke-width: 1px;
-    }
+    /* ── Viz container ── */
+    #pane-mindmap { flex: 1; overflow: hidden; }
 
     /* ── Error toast ── */
     #error-toast {
@@ -256,7 +220,7 @@
           try <em>"Show me my mindmap as a Mermaid diagram"</em> or
           <em>"Draw my mindmap as an ASCII tree"</em>.
           <strong>But this page is better:</strong> you get zoomable, draggable,
-          multi-layout exploration that fits your whole map on one screen —
+          interactive exploration that fits your whole map on one screen —
           something a chat response can't do.
         </p>
       </div>
@@ -266,7 +230,7 @@
     <div class="drop-area" id="drop-area">
       <div class="drop-icon">🗺️</div>
       <h2>Import your mindmap</h2>
-      <p>Drop <code>mindmap.json</code> here or browse to it.<br>Three interactive visualizers, all in the browser.</p>
+      <p>Drop <code>mindmap.json</code> here or browse to it.<br>Interactive mindmap explorer, all in the browser.</p>
       <label class="btn btn-primary" for="file-input" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/></svg>
         Browse file
@@ -282,35 +246,15 @@
 <section id="viz-section">
   <div class="viz-toolbar">
     <span class="viz-title">🧠 Mindmap</span>
-    <div class="tab-group">
-      <button class="tab active" data-tab="force">D3 Force</button>
-      <button class="tab" data-tab="tree">D3 Tree</button>
-      <button class="tab" data-tab="mindmap">Mindmap</button>
-    </div>
     <span class="viz-stats" id="viz-stats"></span>
-    <div id="export-btns" style="display:none;gap:4px;display:none;align-items:center;">
+    <div style="display:flex;gap:4px;align-items:center;margin-left:auto;">
       <button class="tab" id="btn-export-png" style="font-size:0.8rem;padding:5px 10px;">&#x1F4F7; PNG</button>
       <button class="tab" id="btn-export-svg" style="font-size:0.8rem;padding:5px 10px;">&#x2193; SVG</button>
     </div>
     <button id="reset-btn">✕ Load another</button>
   </div>
 
-  <div class="viz-pane active" id="pane-force">
-    <svg id="svg-force">
-      <defs>
-        <marker id="arrow" viewBox="0 -4 8 8" refX="14" refY="0" markerWidth="6" markerHeight="6" orient="auto">
-          <path d="M0,-4L8,0L0,4" fill="var(--border)" />
-        </marker>
-      </defs>
-      <g id="force-root"></g>
-    </svg>
-  </div>
-
-  <div class="viz-pane" id="pane-tree">
-    <svg id="svg-tree"><g id="tree-root"></g></svg>
-  </div>
-
-  <div class="viz-pane" id="pane-mindmap">
+  <div id="pane-mindmap">
     <div id="mk-mindmap" style="width:100%;height:100%;"></div>
   </div>
 </section>
@@ -318,25 +262,15 @@
 <div id="error-toast"></div>
 
 <p style="position:fixed;bottom:8px;right:14px;font-size:0.68rem;color:var(--text-muted);pointer-events:none;z-index:50;">
-  Force &amp; Tree: <a href="https://d3js.org" target="_blank" rel="noopener" style="pointer-events:all;color:var(--text-muted);">D3.js</a> (ISC) ·
-  Mindmap: <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener" style="pointer-events:all;color:var(--text-muted);">mindkeeper-map.js</a> (original)
+  Powered by <a href="https://github.com/icedsg/mindkeeper-mcp/blob/master/docs/mindkeeper-map.js" target="_blank" rel="noopener" style="pointer-events:all;color:var(--text-muted);">mindkeeper-map.js</a>
 </p>
 
-<!-- CDN libraries -->
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="./mindkeeper-map.js"></script>
 
 <script>
 /* ── State ── */
 let mindmapData = null;
-let mmRendered = false;
 let mmInstance = null;
-let activeTab = 'force';
-let forceSimulation = null;
-
-/* ── Reusable zoom behaviors (created once, reused across renders) ── */
-const forceZoom = d3.zoom().scaleExtent([0.2, 4]);
-const treeZoom  = d3.zoom().scaleExtent([0.1, 4]);
 
 /* ── Helpers ── */
 function showError(msg) {
@@ -344,31 +278,6 @@ function showError(msg) {
   el.textContent = msg;
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 4000);
-}
-
-function toTreeNode(nodes, id) {
-  const n = nodes[id];
-  if (!n) return null;
-  return {
-    id: n.id,
-    name: n.text,
-    tags: n.tags || [],
-    children: (n.children || []).map(cid => toTreeNode(nodes, cid)).filter(Boolean)
-  };
-}
-
-function buildHierarchy(data) {
-  const { nodes, rootId } = data;
-  const orphans = Object.values(nodes).filter(n => !n.parentId && n.id !== rootId);
-
-  if (rootId && orphans.length === 0) {
-    return toTreeNode(nodes, rootId);
-  }
-  // Synthetic root when there are orphaned nodes
-  const children = [];
-  if (rootId) children.push(toTreeNode(nodes, rootId));
-  for (const o of orphans) children.push(toTreeNode(nodes, o.id));
-  return { id: '__root__', name: 'Mindkeeper', tags: [], children };
 }
 
 /* ── File loading ── */
@@ -379,7 +288,7 @@ function loadJSON(file) {
       const data = JSON.parse(e.target.result);
       if (!data.nodes || !('rootId' in data)) throw new Error('Not a valid mindmap.json');
       mindmapData = data;
-      renderAll();
+      renderMindmap();
       switchView('viz');
     } catch (err) {
       showError('Invalid mindmap.json: ' + err.message);
@@ -405,34 +314,11 @@ fileInput.addEventListener('change', () => {
 });
 
 document.getElementById('reset-btn').addEventListener('click', () => {
-  if (forceSimulation) { forceSimulation.stop(); forceSimulation = null; }
   mindmapData = null;
-  mmRendered = false;
   mmInstance = null;
   fileInput.value = '';
   document.getElementById('mk-mindmap').innerHTML = '';
-  document.getElementById('export-btns').style.display = 'none';
-  d3.select('#force-root').selectAll('*').remove();
-  d3.select('#tree-root').selectAll('*').remove();
-  activeTab = 'force';
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="force"]').classList.add('active');
-  document.querySelectorAll('.viz-pane').forEach(p => p.classList.remove('active'));
-  document.getElementById('pane-force').classList.add('active');
   switchView('drop');
-});
-
-/* ── Tab switching ── */
-document.querySelectorAll('.tab[data-tab]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    activeTab = btn.dataset.tab;
-    document.querySelectorAll('.tab[data-tab]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.viz-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById('pane-' + activeTab).classList.add('active');
-    document.getElementById('export-btns').style.display = activeTab === 'mindmap' ? 'flex' : 'none';
-    if (activeTab === 'mindmap' && mindmapData && !mmRendered) renderCustomMindmap();
-  });
 });
 
 document.getElementById('btn-export-png').addEventListener('click', () => {
@@ -448,142 +334,16 @@ function switchView(to) {
   document.getElementById('viz-section').style.display = to === 'viz' ? 'flex' : 'none';
 }
 
-/* ── Render all (called once on load) ── */
-function renderAll() {
-  const nodeCount = Object.keys(mindmapData.nodes).length;
-  const root = mindmapData.rootId ? mindmapData.nodes[mindmapData.rootId] : null;
-  document.getElementById('viz-stats').textContent =
-    `${nodeCount} node${nodeCount !== 1 ? 's' : ''}` + (root ? ` · root: "${root.text.slice(0, 40)}"` : '');
-
-  renderForce();
-  renderTree();
-  if (activeTab === 'mindmap') renderCustomMindmap();
-}
-
-/* ══════════════════════════════════════════════════════
-   D3 FORCE GRAPH
-══════════════════════════════════════════════════════ */
-function renderForce() {
-  const { nodes: rawNodes } = mindmapData;
-  const svg = d3.select('#svg-force');
-  const root = document.getElementById('pane-force');
-  const W = root.clientWidth || 900;
-  const H = root.clientHeight || 600;
-  svg.attr('viewBox', `0 0 ${W} ${H}`);
-
-  const g = d3.select('#force-root');
-  g.selectAll('*').remove();
-
-  const nodeList = Object.values(rawNodes).map(n => ({ ...n }));
-  const linkList = [];
-  for (const n of nodeList) {
-    for (const cid of (n.children || [])) {
-      linkList.push({ source: n.id, target: cid });
-    }
-  }
-
-  if (forceSimulation) forceSimulation.stop();
-  forceSimulation = d3.forceSimulation(nodeList)
-    .force('link', d3.forceLink(linkList).id(d => d.id).distance(100))
-    .force('charge', d3.forceManyBody().strength(-300))
-    .force('center', d3.forceCenter(W / 2, H / 2))
-    .force('collision', d3.forceCollide(40));
-
-  const link = g.append('g').selectAll('line')
-    .data(linkList).join('line')
-    .attr('class', 'link-force');
-
-  const node = g.append('g').selectAll('g')
-    .data(nodeList).join('g')
-    .attr('class', 'node')
-    .call(d3.drag()
-      .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on('end', (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
-    );
-
-  node.append('circle').attr('r', d => d.id === mindmapData.rootId ? 10 : 7);
-  node.append('text')
-    .attr('x', 12).attr('dy', '0.35em')
-    .text(d => d.text.length > 30 ? d.text.slice(0, 28) + '…' : d.text);
-
-  forceSimulation.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    node.attr('transform', d => `translate(${d.x},${d.y})`);
-  });
-
-  forceZoom.on('zoom', e => g.attr('transform', e.transform));
-  svg.call(forceZoom);
-}
-
-/* ══════════════════════════════════════════════════════
-   D3 TREE (left-to-right)
-══════════════════════════════════════════════════════ */
-function renderTree() {
-  const svg = d3.select('#svg-tree');
-  const g = d3.select('#tree-root');
-  g.selectAll('*').remove();
-
-  const hierarchy = buildHierarchy(mindmapData);
-  const root = d3.hierarchy(hierarchy);
-  const nodeCount = root.descendants().length;
-
-  const rowHeight = Math.max(24, Math.min(40, 800 / nodeCount));
-  const H = Math.max(600, nodeCount * rowHeight);
-  const W = 900;
-
-  svg.attr('viewBox', `0 0 ${W} ${H}`);
-
-  const treeLayout = d3.tree().size([H, W - 260]);
-  treeLayout(root);
-
-  g.append('g').selectAll('path')
-    .data(root.links()).join('path')
-    .attr('class', 'link')
-    .attr('d', d3.linkHorizontal().x(d => d.y + 80).y(d => d.x));
-
-  const node = g.append('g').selectAll('g')
-    .data(root.descendants()).join('g')
-    .attr('class', 'node')
-    .attr('transform', d => `translate(${d.y + 80},${d.x})`);
-
-  node.append('circle').attr('r', d => d.depth === 0 ? 8 : 5);
-
-  node.append('text')
-    .attr('x', d => d.children ? -10 : 10)
-    .attr('dy', '0.35em')
-    .attr('text-anchor', d => d.children ? 'end' : 'start')
-    .text(d => {
-      const label = d.data.name;
-      const tags = d.data.tags && d.data.tags.length ? ` [${d.data.tags.join(',')}]` : '';
-      const full = label + tags;
-      return full.length > 45 ? full.slice(0, 43) + '…' : full;
-    });
-
-  const pane = document.getElementById('pane-tree');
-  treeZoom.on('zoom', e => g.attr('transform', e.transform));
-  svg.call(treeZoom);
-
-  // Center view — use fallback dims when pane is hidden (not the active tab)
-  const paneW = pane.clientWidth || 900;
-  const paneH = pane.clientHeight || 600;
-  const bounds = g.node().getBBox();
-  const scale = Math.min(1, paneW / (bounds.width + 80), paneH / (bounds.height + 80));
-  const tx = (paneW - bounds.width * scale) / 2 - bounds.x * scale;
-  const ty = (paneH - bounds.height * scale) / 2 - bounds.y * scale;
-  treeZoom.transform(svg, d3.zoomIdentity.translate(tx, ty).scale(scale));
-}
-
 /* ══════════════════════════════════════════════════════
    MINDMAP (MindkeeperMap)
 ══════════════════════════════════════════════════════ */
-function renderCustomMindmap() {
-  if (!mindmapData) return;
-  mmRendered = true;
-
+function renderMindmap() {
   const { nodes, rootId } = mindmapData;
+  const nodeCount = Object.keys(nodes).length;
+  const root = rootId ? nodes[rootId] : null;
+  document.getElementById('viz-stats').textContent =
+    `${nodeCount} node${nodeCount !== 1 ? 's' : ''}` + (root ? ` · root: "${root.text.slice(0, 40)}"` : '');
+
   const rootNode = rootId ? nodes[rootId] : Object.values(nodes)[0];
   const orphans = Object.values(nodes).filter(n => !n.parentId && n.id !== rootId);
 
@@ -603,6 +363,7 @@ function renderCustomMindmap() {
       children: [toTree(rootNode.id), ...orphans.map(o => toTree(o.id))].filter(Boolean) };
   }
 
+  document.getElementById('mk-mindmap').innerHTML = '';
   mmInstance = new MindkeeperMap('#mk-mindmap');
   mmInstance.init(rootData);
 }
