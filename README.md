@@ -13,7 +13,7 @@ Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic 
 - **Session resume** — recall what was last discussed at the start of any conversation
 - **Safe writes** — atomic temp-file → backup → rename strategy
 - **Concurrency-safe** — serialised write queue prevents file corruption
-- **Export** — Markdown, Mermaid diagram, OPML, or raw JSON
+- **Export** — Markdown, Mermaid diagram, OPML, JSON, interactive HTML, SVG, or PNG
 - **Cloud sync** — backup and restore via private GitHub Gist
 
 ## Installation
@@ -109,7 +109,9 @@ You have mindkeeper-mcp connected.
 | `export_mermaid` | Export as a Mermaid flowchart — paste into GitHub, Notion, or Obsidian |
 | `export_opml` | Export as OPML — import into MindNode, OmniOutliner, or XMind |
 | `export_json` | Export raw JSON — use with the [online visualizer](https://icedsg.github.io/mindkeeper-mcp/visualize.html) |
-| `export_html` | Generate a self-contained interactive mind-elixir HTML file saved to `~/.mindkeeper/mindmap-export.html` |
+| `export_html` | Generate a self-contained interactive HTML file saved to `~/.mindkeeper/mindmap-export.html` — open in browser, drag, zoom |
+| `export_svg` | Export as a static SVG vector image to `~/.mindkeeper/mindmap-export.svg` — open in browser, Figma, or Inkscape |
+| `export_png` | Export as a PNG raster image to `~/.mindkeeper/mindmap-export.png` — ready to paste into docs or slides |
 | `import_claude_export` | Parse a `conversations.json` from Claude.ai's data export and build a mindmap from your conversation history |
 | `sync_cloud` | Push or pull the mindmap to/from a private GitHub Gist |
 | `cloud_status` | Show current cloud sync configuration |
@@ -175,6 +177,45 @@ Generate a token at [github.com/settings/tokens](https://github.com/settings/tok
 
 Export your mindmap as JSON and drop it into the browser-based visualizer at [icedsg.github.io/mindkeeper-mcp/visualize.html](https://icedsg.github.io/mindkeeper-mcp/visualize.html) for zoomable, draggable, multi-layout exploration.
 
+## Import from Claude.ai
+
+Turn your entire Claude.ai conversation history into a structured mindmap in three steps.
+
+### Step 1 — Export your Claude.ai data
+
+1. Open [claude.ai](https://claude.ai) and go to **Settings → Account**
+2. Scroll to **Export Data** and click **Export**
+3. Claude emails you a download link within a few minutes
+4. Download the ZIP and unzip it — find `conversations.json` inside
+
+### Step 2 — Import and build the mindmap
+
+Tell Claude:
+
+```
+Import my Claude export from /path/to/conversations.json into my mindmap
+```
+
+Replace the path with the actual location:
+- **Windows:** `C:\Users\YourName\Downloads\claude-export\conversations.json`
+- **Mac/Linux:** `/Users/YourName/Downloads/claude-export/conversations.json`
+
+Claude reads every conversation, clusters them by theme, and populates the mindmap. Trivial or very short conversations are skipped automatically.
+
+### Step 3 — Visualise the result
+
+```
+Export the mindmap as HTML
+```
+
+or for a static image:
+
+```
+Export the mindmap as PNG
+```
+
+The HTML file is saved to `~/.mindkeeper/mindmap-export.html` and opens in any browser — no server needed. The PNG and SVG files land in the same folder.
+
 ## Data storage
 
 The mindmap is stored in `~/.mindkeeper/mindmap.json`. A backup is kept at `~/.mindkeeper/mindmap.json.bak` and is overwritten on every save.
@@ -232,6 +273,7 @@ MIT License — see [LICENSE](LICENSE).
 |---|---|---|
 | [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | MCP server protocol |
 | [uuid](https://github.com/uuidjs/uuid) | MIT | Node ID generation |
+| [@resvg/resvg-js](https://github.com/nicolo-ribaudo/resvg-js) | MIT | SVG → PNG rasterization for `export_png` |
 | [D3.js](https://d3js.org) | ISC | Force graph & tree views in the web visualizer |
 
 **Original work:**

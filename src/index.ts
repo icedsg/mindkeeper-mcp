@@ -17,6 +17,8 @@ import {
   exportOPML,
   exportJSON,
   exportHTML,
+  exportSVG,
+  exportPNG,
   importClaudeExport,
 } from "./mindmap.js";
 import {
@@ -245,6 +247,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "export_svg",
+      description:
+        "Export the mindmap as a static SVG vector image. " +
+        "The file is saved to ~/.mindkeeper/mindmap-export.svg. " +
+        "SVG files open in any browser, Figma, Inkscape, or can be embedded in documents. " +
+        "Uses the same alternating left/right layout as the interactive HTML viewer.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "export_png",
+      description:
+        "Export the mindmap as a PNG raster image. " +
+        "The file is saved to ~/.mindkeeper/mindmap-export.png. " +
+        "PNG is ready to paste into docs, slides, or share directly. " +
+        "Uses the same layout as the interactive HTML viewer.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
       name: "import_claude_export",
       description:
         "Read a conversations.json file exported from Claude.ai and return a structured list of conversations. " +
@@ -404,7 +430,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return ok({
           filePath: result.filePath,
           nodeCount: result.nodeCount,
-          message: `Mindmap HTML written to ${result.filePath}. Open this file in your browser to view the interactive diagram (D3, zoom + pan enabled).`,
+          message: `Mindmap HTML written to ${result.filePath}. Open this file in your browser to view the interactive diagram.`,
+        });
+      }
+
+      case "export_svg": {
+        const result = await exportSVG();
+        return ok({
+          filePath: result.filePath,
+          nodeCount: result.nodeCount,
+          message: `Mindmap SVG written to ${result.filePath}. Open in any browser, Figma, or Inkscape.`,
+        });
+      }
+
+      case "export_png": {
+        const result = await exportPNG();
+        return ok({
+          filePath: result.filePath,
+          nodeCount: result.nodeCount,
+          message: `Mindmap PNG written to ${result.filePath}. Ready to paste into docs or slides.`,
         });
       }
 

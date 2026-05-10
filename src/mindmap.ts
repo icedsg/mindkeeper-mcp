@@ -350,6 +350,200 @@ ${librarySource}
   return { filePath: outPath, nodeCount };
 }
 
+// ── Server-side SVG layout engine ────────────────────────────────────────────
+
+const PALETTE_SVG = [
+  { fill: "#B5EAD7", stroke: "#55B88A", text: "#14432c" },
+  { fill: "#FFD1DC", stroke: "#D9607A", text: "#5c0f22" },
+  { fill: "#C7CEEA", stroke: "#6A7AC8", text: "#151e62" },
+  { fill: "#FFDAC1", stroke: "#D48040", text: "#5c2800" },
+  { fill: "#E2F0CB", stroke: "#80B840", text: "#223800" },
+  { fill: "#B5D5EA", stroke: "#4898C8", text: "#0a2c4a" },
+  { fill: "#F9C9E8", stroke: "#C840A0", text: "#500040" },
+  { fill: "#FAF0B5", stroke: "#B8A010", text: "#332800" },
+];
+const ROOT_SVG = { fill: "#AED6DC", stroke: "#2898B8", text: "#082830" };
+
+interface LayoutNode {
+  id: string;
+  topic: string;
+  cx: number; cy: number;
+  w: number; h: number;
+  depth: number;
+  isLeft: boolean;
+  isRoot: boolean;
+  style: { fill: string; stroke: string; text: string };
+}
+interface LayoutLink { source: LayoutNode; target: LayoutNode }
+
+function svgEstimateW(text: string, fontSize: number, bold: boolean): number {
+  return text.length * fontSize * (bold ? 0.58 : 0.52);
+}
+
+function svgTrunc(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max - 1) + "…" : text;
+}
+
+function svgEsc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+type TreeNode = { id: string; topic: string; _slot: number; children: TreeNode[] };
+
+function assignSlotsTree(root: TreeNode): number {
+  let c = 0;
+  function walk(n: TreeNode) {
+    if (!n.children.length) { n._slot = c++; return; }
+    n.children.forEach(walk);
+    n._slot = (n.children[0]!._slot + n.children[n.children.length - 1]!._slot) / 2;
+  }
+  walk(root);
+  return c;
+}
+
+function buildSvgLayout(map: Mindmap): { nodes: LayoutNode[]; links: LayoutLink[] } {
+  const nodes: LayoutNode[] = [];
+  const links: LayoutLink[] = [];
+  if (!map.rootId || !map.nodes[map.rootId]) return { nodes, links };
+
+  const LEVEL_W = 240, V_GAP = 54;
+  const cx = 500, cy = 400;
+
+  function toTree(id: string): TreeNode {
+    const n = map.nodes[id];
+    if (!n) throw new Error(`missing node ${id}`);
+    return { id: n.id, topic: n.text, _slot: 0, children: n.children.map(toTree) };
+  }
+
+  const rootData = toTree(map.rootId);
+  const rootText = svgTrunc(rootData.topic, 32);
+  const rootW = Math.max(svgEstimateW(rootText, 15, true) + 44, 110);
+  const rootNode: LayoutNode = {
+    id: rootData.id, topic: rootText,
+    cx, cy, w: rootW, h: 42,
+    depth: 0, isLeft: false, isRoot: true, style: ROOT_SVG,
+  };
+  nodes.push(rootNode);
+
+  const allKids = rootData.children;
+  const rightKids = allKids.filter((_, i) => i % 2 === 0);
+  const leftKids  = allKids.filter((_, i) => i % 2 !== 0);
+
+  function layoutSide(kids: TreeNode[], isLeft: boolean) {
+    if (!kids.length) return;
+    const dir = isLeft ? -1 : 1;
+    const bOffset = isLeft ? rightKids.length : 0;
+    const fakeRoot: TreeNode = { id: "", topic: "", _slot: 0, children: kids };
+    const totalSlots = assignSlotsTree(fakeRoot);
+    const yBase = cy - Math.max(0, totalSlots - 1) * V_GAP / 2;
+
+    function place(node: TreeNode, depth: number, parent: LayoutNode, bIdx: number) {
+      const bold = depth <= 1;
+      const fs = depth <= 1 ? 13 : 12;
+      const nh = depth <= 1 ? 36 : 30;
+      const label = svgTrunc(node.topic, 30);
+      const nw = Math.max(svgEstimateW(label, fs, bold) + (depth <= 1 ? 32 : 24), 72);
+      const nd: LayoutNode = {
+        id: node.id, topic: label,
+        cx: cx + dir * depth * LEVEL_W,
+        cy: yBase + node._slot * V_GAP,
+        w: nw, h: nh,
+        depth, isLeft, isRoot: false,
+        style: PALETTE_SVG[bIdx % PALETTE_SVG.length]!,
+      };
+      nodes.push(nd);
+      links.push({ source: parent, target: nd });
+      node.children.forEach(child => place(child, depth + 1, nd, bIdx));
+    }
+    kids.forEach((kid, i) => place(kid, 1, rootNode, bOffset + i));
+  }
+
+  layoutSide(rightKids, false);
+  layoutSide(leftKids, true);
+  return { nodes, links };
+}
+
+function renderToSVGString(nodes: LayoutNode[], links: LayoutLink[]): string {
+  if (!nodes.length) return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><text x="10" y="40" font-family="sans-serif">Empty mindmap</text></svg>`;
+
+  const pad = 60;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of nodes) {
+    minX = Math.min(minX, n.cx - n.w / 2);
+    minY = Math.min(minY, n.cy - n.h / 2);
+    maxX = Math.max(maxX, n.cx + n.w / 2);
+    maxY = Math.max(maxY, n.cy + n.h / 2);
+  }
+  const W = Math.ceil(maxX - minX + pad * 2);
+  const H = Math.ceil(maxY - minY + pad * 2);
+  const dx = -minX + pad;
+  const dy = -minY + pad;
+  const ff = `system-ui,-apple-system,"Segoe UI",Helvetica,sans-serif`;
+
+  const lines: string[] = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
+    `<rect width="${W}" height="${H}" fill="#f8f9fb"/>`,
+    `<defs><filter id="sh" x="-30%" y="-30%" width="160%" height="160%">`,
+    `  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.14"/>`,
+    `</filter></defs>`,
+    `<g id="links">`,
+  ];
+
+  for (const lk of links) {
+    const { source: s, target: t } = lk;
+    const sx = (t.isLeft ? s.cx - s.w / 2 : s.cx + s.w / 2) + dx;
+    const sy = s.cy + dy;
+    const tx = (t.isLeft ? t.cx + t.w / 2 : t.cx - t.w / 2) + dx;
+    const ty = t.cy + dy;
+    const mx = (sx + tx) / 2;
+    lines.push(`  <path d="M${sx.toFixed(1)},${sy.toFixed(1)} C${mx.toFixed(1)},${sy.toFixed(1)} ${mx.toFixed(1)},${ty.toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)}" fill="none" stroke="${t.style.stroke}" stroke-width="3" stroke-linecap="round" opacity="0.82"/>`);
+  }
+
+  lines.push(`</g>`, `<g id="nodes">`);
+  for (const nd of nodes) {
+    const nx = nd.cx + dx;
+    const ny = nd.cy + dy;
+    const rx = nd.isRoot ? nd.h / 2 : 8;
+    const fs = nd.isRoot ? 15 : nd.depth === 1 ? 13 : 12;
+    const fw = nd.isRoot || nd.depth === 1 ? "bold" : "normal";
+    lines.push(
+      `  <rect x="${(nx - nd.w / 2).toFixed(1)}" y="${(ny - nd.h / 2).toFixed(1)}" width="${nd.w.toFixed(1)}" height="${nd.h}" rx="${rx}" fill="${nd.style.fill}" stroke="${nd.style.stroke}" stroke-width="2.5" filter="url(#sh)"/>`,
+      `  <text x="${nx.toFixed(1)}" y="${ny.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${ff}" font-size="${fs}" font-weight="${fw}" fill="${nd.style.text}">${svgEsc(nd.topic)}</text>`
+    );
+  }
+  lines.push(`</g>`, `</svg>`);
+  return lines.join("\n");
+}
+
+export async function exportSVG(): Promise<{ filePath: string; nodeCount: number }> {
+  const map = await loadMindmap();
+  const nodeCount = Object.keys(map.nodes).length;
+  const { nodes, links } = buildSvgLayout(map);
+  const svg = renderToSVGString(nodes, links);
+  const outPath = join(homedir(), ".mindkeeper", "mindmap-export.svg");
+  await writeFile(outPath, svg, "utf-8");
+  console.error(`[mindkeeper] export_svg -> ${outPath}`);
+  return { filePath: outPath, nodeCount };
+}
+
+export async function exportPNG(): Promise<{ filePath: string; nodeCount: number }> {
+  const map = await loadMindmap();
+  const nodeCount = Object.keys(map.nodes).length;
+  const { nodes, links } = buildSvgLayout(map);
+  const svg = renderToSVGString(nodes, links);
+
+  const { Resvg } = await import("@resvg/resvg-js");
+  const renderer = new Resvg(svg, { font: { loadSystemFonts: true } });
+  const pngData = renderer.render();
+  const pngBuffer = pngData.asPng();
+
+  const outPath = join(homedir(), ".mindkeeper", "mindmap-export.png");
+  await writeFile(outPath, pngBuffer);
+  console.error(`[mindkeeper] export_png -> ${outPath}`);
+  return { filePath: outPath, nodeCount };
+}
+
 export async function exportMermaid(): Promise<string> {
   const map = await loadMindmap();
 
