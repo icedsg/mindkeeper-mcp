@@ -24,10 +24,30 @@ export interface MindLink {
   createdAt: string;
 }
 
+export type HistoryOp = "add" | "update" | "delete" | "move" | "link" | "unlink";
+
+// Node state kept in history (children are derived from parentId, so they are left out)
+export type NodeState = Omit<MindNode, "children" | "createdAt" | "updatedAt">;
+
+// One change, appended on every write. at = when it was recorded; effectiveDate = when it really
+// happened (e.g. a hire backdated to 2026-01-15), used by snapshot_as_of and diff_between.
+export interface HistoryEntry {
+  at: string;
+  op: HistoryOp;
+  nodeId: string;
+  linkId?: string;
+  before?: NodeState | MindLink;
+  after?: NodeState | MindLink;
+  effectiveDate?: string;
+  rootBefore?: string | null;
+  orphaned?: string[];
+}
+
 export interface Mindmap {
   nodes: Record<string, MindNode>;
   rootId: string | null;
   links?: MindLink[];
+  history?: HistoryEntry[];
 }
 
 export interface GistCloudConfig {

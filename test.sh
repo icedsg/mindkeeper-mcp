@@ -35,6 +35,7 @@ import {
   addIdea, updateNode, deleteNode,
   searchNodes, getSubtree, exportMarkdown, exportMermaid, exportOPML, exportJSON,
   addEntity, linkEntities, unlinkEntities, moveNode,
+  getHistory, snapshotAsOf, diffBetween, exportHTML,
 } from './build/mindmap.js';
 import { writeFile as writeFileFs, mkdir as mkdirFs } from 'fs/promises';
 
@@ -538,6 +539,155 @@ await test('old mindmap.json (no kind/attrs/links) loads and works unchanged', a
   if ('links' in after || 'kind' in after.nodes.b || 'attrs' in after.nodes.b) throw new Error('legacy file gained new keys');
   await writeFileFs(join(dir, 'mindmap.json'), JSON.stringify(saved), 'utf-8');
   ok('legacy file reads, edits, and keeps its shape');
+});
+
+// ── History, as-of, diff ──────────────────────────────────────────────────────
+section('History + as-of + diff');
+
+const org = {};
+const kidsOf = (m, id) => m.nodes[id].children.map((c) => m.nodes[c].text);
+
+await test('fresh store: build a small org with effective dates', async () => {
+  const dir = join(homedir(), '.mindkeeper');
+  await writeFileFs(join(dir, 'mindmap.json'), JSON.stringify({ nodes: {}, rootId: null }), 'utf-8');
+  org.acme = (await addEntity('Acme', 'company', undefined, undefined, undefined, '2026-01-01')).id;
+  org.ana  = (await addEntity('Ana', 'person', org.acme, { title: 'CEO' }, undefined, '2026-01-01')).id;
+  org.ben  = (await addEntity('Ben', 'person', org.ana, { title: 'Engineer' }, undefined, '2026-01-10')).id;
+  org.cara = (await addEntity('Cara', 'person', org.ana, undefined, undefined, '2026-01-10')).id;
+  org.proj = (await addEntity('Apollo', 'project', org.acme, undefined, undefined, '2026-01-01')).id;
+  await linkEntities(org.ben, org.proj, 'works_on', undefined, '2026-02-01');
+  org.dee  = (await addEntity('Dee', 'person', org.ben, undefined, undefined, '2026-03-01')).id;
+  await moveNode(org.cara, org.ben, '2026-04-01');
+  await updateNode(org.ben, 'Ben Ortiz', undefined, '2026-05-01');
+  await addEntity('Ben Ortiz', 'person', org.ana, { title: 'Lead' }, undefined, '2026-05-15');
+  await deleteNode(org.dee, '2026-06-01');
+  await unlinkEntities({ from: org.ben, to: org.proj, effectiveDate: '2026-06-15' });
+  const map = await exportJSON();
+  if (map.history.length !== 12) throw new Error(`history has ${map.history.length} entries, want 12`);
+  ok('12 changes recorded');
+});
+
+await test('history entries carry at, op, nodeId, before/after, effectiveDate', async () => {
+  const map = await exportJSON();
+  const mv = map.history.find((e) => e.op === 'move');
+  if (!mv.at || mv.nodeId !== org.cara || mv.effectiveDate !== '2026-04-01') throw new Error('move entry wrong');
+  if (mv.before.parentId !== org.ana || mv.after.parentId !== org.ben) throw new Error('move before/after wrong');
+  if ('children' in mv.before) throw new Error('children should not be stored');
+  const add = map.history[0];
+  if (add.op !== 'add' || add.before !== undefined || add.after.text !== 'Acme') throw new Error('add entry wrong');
+  ok('entry shape correct');
+});
+
+await test('get_history: newest first, filter by node (incl. its links) and dates', async () => {
+  const all = await getHistory();
+  if (all.entries[0].op !== 'unlink') throw new Error(`newest is ${all.entries[0].op}`);
+  const ben = await getHistory({ nodeId: org.proj });
+  const ops = ben.entries.map((e) => e.op).join(',');
+  if (ops !== 'unlink,link,add') throw new Error(`Apollo history: ${ops}`);
+  const q2 = await getHistory({ since: '2026-04-01', until: '2026-05-31' });
+  if (q2.total !== 3) throw new Error(`Apr-May has ${q2.total}, want 3`);
+  const lim = await getHistory({ limit: 2 });
+  if (lim.entries.length !== 2 || lim.total !== 12) throw new Error('limit wrong');
+  ok('ordering, nodeId, since/until and limit work');
+});
+
+await test('snapshot before anything happened is empty', async () => {
+  const m = await snapshotAsOf('2025-12-31');
+  if (Object.keys(m.nodes).length !== 0 || m.rootId !== null || m.links) throw new Error('not empty');
+  ok('2025-12-31: empty');
+});
+
+await test('snapshot 2026-02-15: original tree with the link', async () => {
+  const m = await snapshotAsOf('2026-02-15');
+  if (Object.keys(m.nodes).length !== 5) throw new Error(`${Object.keys(m.nodes).length} nodes`);
+  if (m.rootId !== org.acme) throw new Error('root wrong');
+  if (kidsOf(m, org.ana).join(',') !== 'Ben,Cara') throw new Error(`Ana's reports: ${kidsOf(m, org.ana)}`);
+  if (m.nodes[org.ben].attrs.title !== 'Engineer') throw new Error('old title not restored');
+  if (!m.links || m.links.length !== 1) throw new Error('link missing');
+  ok('names, titles, reports and the link as they were');
+});
+
+await test('snapshot on the effective day includes that change', async () => {
+  const m = await snapshotAsOf('2026-03-01');
+  if (!m.nodes[org.dee] || m.nodes[org.dee].parentId !== org.ben) throw new Error('Dee missing on her start date');
+  if (kidsOf(m, org.ben).join(',') !== 'Dee') throw new Error(`Ben's reports: ${kidsOf(m, org.ben)}`);
+  ok('2026-03-01: Dee under Ben');
+});
+
+await test('snapshot after a delete restores nothing; before it restores node + links', async () => {
+  const late = await snapshotAsOf('2026-07-01');
+  const now = await exportJSON();
+  if (Object.keys(late.nodes).sort().join() !== Object.keys(now.nodes).sort().join()) throw new Error('late snapshot != now');
+  if (late.links) throw new Error('link should be gone');
+  const may = await snapshotAsOf('2026-05-20');
+  if (!may.nodes[org.dee] || kidsOf(may, org.ben).join(',') !== 'Cara,Dee') throw new Error(`May: ${kidsOf(may, org.ben)}`);
+  if (may.nodes[org.ben].text !== 'Ben Ortiz' || may.nodes[org.ben].attrs.title !== 'Lead') throw new Error('May Ben wrong');
+  ok('July = today; May has Dee back and Cara under Ben');
+});
+
+await test('diff_between: moved, renamed, changed, links removed', async () => {
+  const d = await diffBetween('2026-02-15', '2026-07-01');
+  if (d.joined.length || d.left.length) throw new Error('Dee came and went inside the window');
+  if (d.moved.length !== 1 || d.moved[0].name !== 'Cara' || d.moved[0].fromParent.name !== 'Ana' || d.moved[0].toParent.name !== 'Ben Ortiz')
+    throw new Error(`moved ${JSON.stringify(d.moved)}`);
+  if (d.renamed.length !== 1 || d.renamed[0].from !== 'Ben' || d.renamed[0].to !== 'Ben Ortiz') throw new Error('renamed wrong');
+  if (d.changed.length !== 1 || d.changed[0].fields.join() !== 'title') throw new Error(`changed ${JSON.stringify(d.changed)}`);
+  if (d.links.removed.length !== 1 || d.links.added.length !== 0) throw new Error('links wrong');
+  ok('Cara Ana -> Ben Ortiz, Ben renamed, title changed, 1 link removed');
+});
+
+await test('diff_between: joined and left', async () => {
+  const j = await diffBetween('2026-02-15', '2026-03-15');
+  if (j.joined.length !== 1 || j.joined[0].name !== 'Dee' || j.joined[0].parent.name !== 'Ben') throw new Error('joined wrong');
+  const l = await diffBetween('2026-03-15', '2026-06-30');
+  if (l.left.length !== 1 || l.left[0].name !== 'Dee') throw new Error('left wrong');
+  ok('Dee joined under Ben in March, left in June');
+});
+
+await test('changes without effectiveDate count from when they were recorded', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const n = await addEntity('Eve', 'person', org.ana);
+  const m = await snapshotAsOf(today);
+  if (!m.nodes[n.id]) throw new Error('Eve missing from today');
+  const d = await diffBetween('2026-07-01', today);
+  if (!d.joined.some((x) => x.name === 'Eve')) throw new Error('Eve not joined');
+  ok('undated change shows up from today');
+});
+
+await test('bad dates are refused', async () => {
+  for (const fn of [() => snapshotAsOf('last tuesday'), () => moveNode(org.cara, org.ana, '15/01/2026'), () => diffBetween('2026-13-45', '2026-01-01')]) {
+    let threw = false;
+    try { await fn(); } catch { threw = true; }
+    if (!threw) throw new Error('bad date accepted');
+  }
+  const m = await exportJSON();
+  if (m.nodes[org.cara].parentId !== org.ben) throw new Error('refused move still changed the map');
+  ok('non-ISO dates throw, map untouched');
+});
+
+await test('legacy nodes (no history) fall back to createdAt', async () => {
+  const dir = join(homedir(), '.mindkeeper');
+  const legacy = {
+    nodes: {
+      a: { id: 'a', text: 'Old root', children: ['b'], createdAt: '2025-01-01T00:00:00.000Z', updatedAt: '2025-01-01T00:00:00.000Z', tags: [] },
+      b: { id: 'b', text: 'Later child', parentId: 'a', children: [], createdAt: '2025-06-01T00:00:00.000Z', updatedAt: '2025-06-01T00:00:00.000Z', tags: [] },
+    },
+    rootId: 'a',
+  };
+  await writeFileFs(join(dir, 'mindmap.json'), JSON.stringify(legacy), 'utf-8');
+  const m = await snapshotAsOf('2025-03-01');
+  if (!m.nodes.a || m.nodes.b || m.nodes.a.children.length !== 0) throw new Error('createdAt fallback wrong');
+  const h = await getHistory();
+  if (h.total !== 0) throw new Error('legacy file should have no history');
+  ok('Mar 2025: root only, empty history');
+});
+
+await test('export_html leaves history out of the page', async () => {
+  await addIdea('Note', 'a');
+  const { filePath } = await exportHTML();
+  const html = await readFile(filePath, 'utf-8');
+  if (html.includes('"history"')) throw new Error('history inlined in HTML');
+  ok('no history in the HTML export');
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────

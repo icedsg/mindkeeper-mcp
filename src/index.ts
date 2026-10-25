@@ -21,6 +21,9 @@ import {
   linkEntities,
   unlinkEntities,
   moveNode,
+  getHistory,
+  snapshotAsOf,
+  diffBetween,
 } from "./mindmap.js";
 import {
   loadConfig,
@@ -83,6 +86,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           text: {
             type: "string",
             description: "The idea or concept text to capture",
@@ -112,6 +119,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           nodeId: {
             type: "string",
             description: "ID of the node to update",
@@ -140,6 +151,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           nodeId: {
             type: "string",
             description: "ID of the node to delete",
@@ -159,6 +174,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           name: { type: "string", description: "Display name, e.g. 'Priya Nair' or 'Acme Ltd'" },
           kind: {
             type: "string",
@@ -189,6 +208,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           from: { type: "string", description: "Source node ID" },
           to: { type: "string", description: "Target node ID" },
           type: { type: "string", description: "Relation type, e.g. works_on, owns, advises, member_of" },
@@ -204,6 +227,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           linkId: { type: "string", description: "ID of the link to remove" },
           from: { type: "string", description: "Source node ID" },
           to: { type: "string", description: "Target node ID" },
@@ -219,10 +246,57 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
           nodeId: { type: "string", description: "ID of the node to move" },
           newParentId: { type: "string", description: "ID of the new parent. Omit for root level." },
         },
         required: ["nodeId"],
+      },
+    },
+    {
+      name: "get_history",
+      description:
+        "List recorded changes, newest first: adds, updates, deletes, moves, links and unlinks, each with " +
+        "before/after state and its effectiveDate. Filter by nodeId (also matches links touching it) and a date range. " +
+        "Changes made before history was kept are not listed.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nodeId: { type: "string", description: "Only changes to this node or its links" },
+          since: { type: "string", description: "From this date (YYYY-MM-DD), by effective date" },
+          until: { type: "string", description: "Up to and including this date (YYYY-MM-DD)" },
+          limit: { type: "number", description: "Max entries (default 50)" },
+        },
+      },
+    },
+    {
+      name: "snapshot_as_of",
+      description:
+        "The mindmap or org chart as it stood on a date: the tree (manager = parent) and links on that day, " +
+        "rebuilt by undoing every recorded change that took effect after it.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          date: { type: "string", description: "YYYY-MM-DD (end of that day) or an ISO timestamp" },
+        },
+        required: ["date"],
+      },
+    },
+    {
+      name: "diff_between",
+      description:
+        "What changed between two dates: who joined, who left, who moved (old and new parent), what was renamed, " +
+        "changed attributes (title, status, ...) and links added or removed. Good for 'how did the team change since January'.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          dateA: { type: "string", description: "Earlier date, YYYY-MM-DD" },
+          dateB: { type: "string", description: "Later date, YYYY-MM-DD (defaults to today)" },
+        },
+        required: ["dateA"],
       },
     },
     {
@@ -381,7 +455,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const node = await addIdea(
           args["text"] as string,
           args["parentId"] as string | undefined,
-          args["tags"] as string[] | undefined
+          args["tags"] as string[] | undefined,
+          args["effectiveDate"] as string | undefined
         );
         console.error(`[mindkeeper] tool add_idea -> ${node.id}`);
         return ok({ node });
@@ -391,14 +466,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const node = await updateNode(
           args["nodeId"] as string,
           args["newText"] as string,
-          args["newTags"] as string[] | undefined
+          args["newTags"] as string[] | undefined,
+          args["effectiveDate"] as string | undefined
         );
         console.error(`[mindkeeper] tool update_node ${node.id}`);
         return ok({ node });
       }
 
       case "delete_node": {
-        const result = await deleteNode(args["nodeId"] as string);
+        const result = await deleteNode(args["nodeId"] as string, args["effectiveDate"] as string | undefined);
         console.error(`[mindkeeper] tool delete_node ${result.deleted}`);
         return ok(result);
       }
@@ -409,7 +485,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args["kind"] as string,
           args["parentId"] as string | undefined,
           args["attrs"] as Record<string, unknown> | undefined,
-          args["tags"] as string[] | undefined
+          args["tags"] as string[] | undefined,
+          args["effectiveDate"] as string | undefined
         );
         console.error(`[mindkeeper] tool add_entity -> ${node.id}`);
         return ok({ node });
@@ -420,7 +497,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args["from"] as string,
           args["to"] as string,
           args["type"] as string,
-          args["label"] as string | undefined
+          args["label"] as string | undefined,
+          args["effectiveDate"] as string | undefined
         );
         console.error(`[mindkeeper] tool link_entities -> ${link.id}`);
         return ok({ link });
@@ -432,6 +510,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           from: args["from"] as string | undefined,
           to: args["to"] as string | undefined,
           type: args["type"] as string | undefined,
+          effectiveDate: args["effectiveDate"] as string | undefined,
         });
         console.error(`[mindkeeper] tool unlink_entities (${result.removed.length})`);
         return ok(result);
@@ -440,10 +519,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "move_node": {
         const node = await moveNode(
           args["nodeId"] as string,
-          args["newParentId"] as string | undefined
+          args["newParentId"] as string | undefined,
+          args["effectiveDate"] as string | undefined
         );
         console.error(`[mindkeeper] tool move_node ${node.id}`);
         return ok({ node });
+      }
+
+      case "get_history": {
+        const result = await getHistory({
+          nodeId: args["nodeId"] as string | undefined,
+          since: args["since"] as string | undefined,
+          until: args["until"] as string | undefined,
+          limit: args["limit"] as number | undefined,
+        });
+        console.error(`[mindkeeper] tool get_history -> ${result.entries.length}/${result.total}`);
+        return ok(result);
+      }
+
+      case "snapshot_as_of": {
+        const date = args["date"] as string;
+        const map = await snapshotAsOf(date);
+        const tree = map.rootId ? buildTree(map.nodes, map.rootId) : null;
+        const orphans = Object.values(map.nodes)
+          .filter((n) => n.parentId === undefined && n.id !== map.rootId)
+          .map((n) => buildTree(map.nodes, n.id))
+          .filter((n): n is TreeNode => n !== null);
+        const totalNodes = Object.keys(map.nodes).length;
+        console.error(`[mindkeeper] tool snapshot_as_of ${date} (${totalNodes} nodes)`);
+        const links = map.links ?? [];
+        return ok({ date, tree, orphans, totalNodes, ...(links.length > 0 && { links }) });
+      }
+
+      case "diff_between": {
+        const dateA = args["dateA"] as string;
+        const dateB = (args["dateB"] as string | undefined) || new Date().toISOString().slice(0, 10);
+        const diff = await diffBetween(dateA, dateB);
+        console.error(
+          `[mindkeeper] tool diff_between ${dateA}..${dateB} +${diff.joined.length} -${diff.left.length} ~${diff.moved.length}`
+        );
+        return ok(diff);
       }
 
       case "search_ideas": {

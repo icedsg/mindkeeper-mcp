@@ -5,7 +5,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { loadMindmap, saveMindmap } from "./storage.js";
 import { ENTITY_KINDS } from "./types.js";
-import type { EntityKind, MindLink, MindNode, Mindmap } from "./types.js";
+import type { EntityKind, HistoryEntry, MindLink, MindNode, Mindmap, NodeState } from "./types.js";
 
 // Serialized write queue — prevents concurrent file corruption under parallel tool calls
 let writeQueue: Promise<unknown> = Promise.resolve();
@@ -27,14 +27,42 @@ function normalizeTags(tags: string[]): string[] {
   return tags.map((t) => t.replace(/^#+/, "").trim().toLowerCase()).filter(Boolean);
 }
 
+// ── History ──────────────────────────────────────────────────────────────────
+
+// Dates are YYYY-MM-DD or a full ISO timestamp
+function checkDate(date: string | undefined, what = "effectiveDate"): string | undefined {
+  if (date === undefined || date === "") return undefined;
+  const d = date.trim();
+  if (!/^\d{4}-\d{2}-\d{2}/.test(d) || Number.isNaN(Date.parse(d))) {
+    throw new Error(`Bad ${what}: ${date} (use YYYY-MM-DD or an ISO timestamp)`);
+  }
+  return d;
+}
+
+function nodeState(n: MindNode): NodeState {
+  const { children: _c, createdAt: _a, updatedAt: _u, ...rest } = n;
+  return structuredClone(rest);
+}
+
+function record(
+  map: Mindmap,
+  entry: Omit<HistoryEntry, "at" | "effectiveDate"> & { effectiveDate: string | undefined }
+): void {
+  const { effectiveDate, ...rest } = entry;
+  const e: HistoryEntry = { at: ts(), ...rest, ...(effectiveDate !== undefined && { effectiveDate }) };
+  (map.history ??= []).push(e);
+}
+
 // ── Write operations (serialized) ────────────────────────────────────────────
 
 export function addIdea(
   text: string,
   parentId?: string,
-  tags?: string[]
+  tags?: string[],
+  effectiveDate?: string
 ): Promise<MindNode> {
   return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
 
     if (parentId !== undefined && !map.nodes[parentId]) {
@@ -72,6 +100,10 @@ export function addIdea(
     } else if (map.rootId === null) {
       map.rootId = node.id;
     }
+    record(map, {
+      op: "add", nodeId: node.id, after: nodeState(node), effectiveDate: eff,
+      ...(map.rootId === node.id && { rootBefore: null }),
+    });
 
     await saveMindmap(map);
     console.error(`[mindkeeper] add ${node.id} "${text.slice(0, 60)}"`);
@@ -82,16 +114,20 @@ export function addIdea(
 export function updateNode(
   nodeId: string,
   newText: string,
-  newTags?: string[]
+  newTags?: string[],
+  effectiveDate?: string
 ): Promise<MindNode> {
   return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
     const node = map.nodes[nodeId];
     if (!node) throw new Error(`Node not found: ${nodeId}`);
 
+    const before = nodeState(node);
     node.text = newText;
     if (newTags !== undefined) node.tags = normalizeTags(newTags);
     node.updatedAt = ts();
+    record(map, { op: "update", nodeId, before, after: nodeState(node), effectiveDate: eff });
 
     await saveMindmap(map);
     console.error(`[mindkeeper] update ${nodeId}`);
@@ -100,12 +136,23 @@ export function updateNode(
 }
 
 export function deleteNode(
-  nodeId: string
+  nodeId: string,
+  effectiveDate?: string
 ): Promise<{ deleted: string; orphaned: string[] }> {
   return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
     const node = map.nodes[nodeId];
     if (!node) throw new Error(`Node not found: ${nodeId}`);
+
+    // Links touching the node go first, so rewinding the delete brings them back too
+    for (const l of map.links ?? []) {
+      if (l.from === nodeId || l.to === nodeId) {
+        record(map, { op: "unlink", nodeId: l.from, linkId: l.id, before: structuredClone(l), effectiveDate: eff });
+      }
+    }
+    const before = nodeState(node);
+    const rootBefore = map.rootId;
 
     // Detach from parent's children list
     if (node.parentId !== undefined) {
@@ -129,6 +176,11 @@ export function deleteNode(
       map.links = map.links.filter((l) => l.from !== nodeId && l.to !== nodeId);
       if (map.links.length === 0) delete map.links;
     }
+    record(map, {
+      op: "delete", nodeId, before, effectiveDate: eff,
+      ...(orphaned.length > 0 && { orphaned }),
+      ...(rootBefore !== map.rootId && { rootBefore }),
+    });
 
     await saveMindmap(map);
     console.error(
@@ -161,10 +213,12 @@ export function addEntity(
   kind: string,
   parentId?: string,
   attrs?: Record<string, unknown>,
-  tags?: string[]
+  tags?: string[],
+  effectiveDate?: string
 ): Promise<MindNode> {
   return enqueue(async () => {
     const k = checkKind(kind);
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
 
     if (parentId !== undefined && !map.nodes[parentId]) {
@@ -180,10 +234,12 @@ export function addEntity(
         (n.kind ?? "idea") === k
     );
     if (existing) {
+      const before = nodeState(existing);
       if (attrs) existing.attrs = { ...(existing.attrs ?? {}), ...normalizeAttrs(attrs) };
       if (tags) existing.tags = [...new Set([...existing.tags, ...normalizeTags(tags)])];
       existing.kind = k;
       existing.updatedAt = ts();
+      record(map, { op: "update", nodeId: existing.id, before, after: nodeState(existing), effectiveDate: eff });
       await saveMindmap(map);
       console.error(`[mindkeeper] merge entity ${existing.id} "${name.slice(0, 60)}"`);
       return existing;
@@ -212,6 +268,10 @@ export function addEntity(
     } else if (map.rootId === null) {
       map.rootId = node.id;
     }
+    record(map, {
+      op: "add", nodeId: node.id, after: nodeState(node), effectiveDate: eff,
+      ...(map.rootId === node.id && { rootBefore: null }),
+    });
 
     await saveMindmap(map);
     console.error(`[mindkeeper] add entity ${k} ${node.id} "${name.slice(0, 60)}"`);
@@ -223,9 +283,11 @@ export function linkEntities(
   from: string,
   to: string,
   type: string,
-  label?: string
+  label?: string,
+  effectiveDate?: string
 ): Promise<MindLink> {
   return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
     if (!map.nodes[from]) throw new Error(`Node not found: ${from}`);
     if (!map.nodes[to]) throw new Error(`Node not found: ${to}`);
@@ -236,8 +298,10 @@ export function linkEntities(
     const links = map.links ?? [];
     const existing = links.find((l) => l.from === from && l.to === to && l.type === t);
     if (existing) {
-      if (label !== undefined) {
+      if (label !== undefined && label !== existing.label) {
+        const before = structuredClone(existing);
         existing.label = label;
+        record(map, { op: "link", nodeId: from, linkId: existing.id, before, after: structuredClone(existing), effectiveDate: eff });
         await saveMindmap(map);
       }
       return existing;
@@ -253,6 +317,7 @@ export function linkEntities(
     };
     links.push(link);
     map.links = links;
+    record(map, { op: "link", nodeId: from, linkId: link.id, after: structuredClone(link), effectiveDate: eff });
     await saveMindmap(map);
     console.error(`[mindkeeper] link ${from} -${t}-> ${to}`);
     return link;
@@ -265,8 +330,10 @@ export function unlinkEntities(opts: {
   from?: string | undefined;
   to?: string | undefined;
   type?: string | undefined;
+  effectiveDate?: string | undefined;
 }): Promise<{ removed: MindLink[] }> {
   return enqueue(async () => {
+    const eff = checkDate(opts.effectiveDate);
     const map = await loadMindmap();
     const links = map.links ?? [];
     const t = opts.type?.trim().toLowerCase();
@@ -282,6 +349,9 @@ export function unlinkEntities(opts: {
     if (removed.length === 0) throw new Error("No matching link");
     map.links = links.filter((l) => !match(l));
     if (map.links.length === 0) delete map.links;
+    for (const l of removed) {
+      record(map, { op: "unlink", nodeId: l.from, linkId: l.id, before: structuredClone(l), effectiveDate: eff });
+    }
     await saveMindmap(map);
     console.error(`[mindkeeper] unlink ${removed.length}`);
     return { removed };
@@ -289,8 +359,9 @@ export function unlinkEntities(opts: {
 }
 
 // Re-parent a node (e.g. a person moving to a new manager). newParentId omitted = make it a root-level node.
-export function moveNode(nodeId: string, newParentId?: string): Promise<MindNode> {
+export function moveNode(nodeId: string, newParentId?: string, effectiveDate?: string): Promise<MindNode> {
   return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
     const map = await loadMindmap();
     const node = map.nodes[nodeId];
     if (!node) throw new Error(`Node not found: ${nodeId}`);
@@ -302,6 +373,8 @@ export function moveNode(nodeId: string, newParentId?: string): Promise<MindNode
       }
     }
     if (node.parentId === newParentId) return node;
+    const before = nodeState(node);
+    const rootBefore = map.rootId;
 
     if (node.parentId !== undefined) {
       const old = map.nodes[node.parentId];
@@ -326,11 +399,189 @@ export function moveNode(nodeId: string, newParentId?: string): Promise<MindNode
       if (map.rootId === null) map.rootId = nodeId;
     }
     node.updatedAt = ts();
+    record(map, {
+      op: "move", nodeId, before, after: nodeState(node), effectiveDate: eff,
+      ...(rootBefore !== map.rootId && { rootBefore }),
+    });
 
     await saveMindmap(map);
     console.error(`[mindkeeper] move ${nodeId} -> ${newParentId ?? "(root level)"}`);
     return node;
   });
+}
+
+// ── History, as-of snapshots and diffs ───────────────────────────────────────
+
+// Date-only cutoffs mean the end of that day (UTC); date-only effective dates the start of it
+function dateMs(date: string, endOfDay: boolean): number {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return Date.parse(`${date}T00:00:00.000Z`) + (endOfDay ? 86_400_000 - 1 : 0);
+  }
+  return Date.parse(date);
+}
+
+function entryMs(e: HistoryEntry): number {
+  return dateMs(e.effectiveDate ?? e.at, false);
+}
+
+function restoreNode(state: NodeState, keep: MindNode | undefined, at: string): MindNode {
+  return {
+    ...structuredClone(state),
+    children: keep?.children ?? [],
+    createdAt: keep?.createdAt ?? at,
+    updatedAt: keep?.updatedAt ?? at,
+  };
+}
+
+// The map as it stood on a date: undo, newest first, every change that took effect after it.
+// Nodes from before history was kept (no "add" entry) fall back to their createdAt.
+export function rewind(map: Mindmap, date: string): Mindmap {
+  const d = checkDate(date, "date")!;
+  const cutoff = dateMs(d, true);
+  const m: Mindmap = structuredClone({ nodes: map.nodes, rootId: map.rootId, links: map.links ?? [] });
+  const history = map.history ?? [];
+  const added = new Set(history.filter((e) => e.op === "add").map((e) => e.nodeId));
+  let links = m.links!;
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    const e = history[i]!;
+    if (entryMs(e) <= cutoff) continue;
+    switch (e.op) {
+      case "add":
+        delete m.nodes[e.nodeId];
+        break;
+      case "update":
+      case "move":
+        if (e.before) m.nodes[e.nodeId] = restoreNode(e.before as NodeState, m.nodes[e.nodeId], e.at);
+        break;
+      case "delete":
+        if (e.before) m.nodes[e.nodeId] = restoreNode(e.before as NodeState, undefined, e.at);
+        for (const cid of e.orphaned ?? []) {
+          const c = m.nodes[cid];
+          if (c && c.parentId === undefined) c.parentId = e.nodeId;
+        }
+        break;
+      case "link":
+        links = links.filter((l) => l.id !== e.linkId);
+        if (e.before) links.push(structuredClone(e.before as MindLink));
+        break;
+      case "unlink":
+        if (e.before && !links.some((l) => l.id === e.linkId)) links.push(structuredClone(e.before as MindLink));
+        break;
+    }
+    if (e.rootBefore !== undefined) m.rootId = e.rootBefore;
+  }
+
+  for (const n of Object.values(m.nodes)) {
+    if (!added.has(n.id) && Date.parse(n.createdAt) > cutoff) delete m.nodes[n.id];
+  }
+
+  // Children are rebuilt from parentId, keeping today's order where it still applies
+  for (const n of Object.values(m.nodes)) {
+    if (n.parentId !== undefined && !m.nodes[n.parentId]) delete n.parentId;
+  }
+  for (const n of Object.values(m.nodes)) {
+    const kids = n.children.filter((cid) => m.nodes[cid]?.parentId === n.id);
+    for (const c of Object.values(m.nodes)) {
+      if (c.parentId === n.id && !kids.includes(c.id)) kids.push(c.id);
+    }
+    n.children = kids;
+  }
+  if (m.rootId === null || !m.nodes[m.rootId] || m.nodes[m.rootId]!.parentId !== undefined) {
+    m.rootId = Object.values(m.nodes).find((n) => n.parentId === undefined)?.id ?? null;
+  }
+
+  links = links.filter((l) => m.nodes[l.from] && m.nodes[l.to]);
+  if (links.length > 0) m.links = links;
+  else delete m.links;
+  return m;
+}
+
+export async function getHistory(opts: {
+  nodeId?: string | undefined;
+  since?: string | undefined;
+  until?: string | undefined;
+  limit?: number | undefined;
+} = {}): Promise<{ total: number; entries: HistoryEntry[] }> {
+  const map = await loadMindmap();
+  const since = checkDate(opts.since, "since");
+  const until = checkDate(opts.until, "until");
+  const touches = (e: HistoryEntry): boolean => {
+    if (e.nodeId === opts.nodeId) return true;
+    const l = (e.after ?? e.before) as MindLink | undefined;
+    return e.linkId !== undefined && l !== undefined && (l.from === opts.nodeId || l.to === opts.nodeId);
+  };
+  const matched = (map.history ?? []).filter(
+    (e) =>
+      (!opts.nodeId || touches(e)) &&
+      (!since || entryMs(e) >= dateMs(since, false)) &&
+      (!until || entryMs(e) <= dateMs(until, true))
+  );
+  const limit = opts.limit && opts.limit > 0 ? opts.limit : 50;
+  return { total: matched.length, entries: matched.reverse().slice(0, limit) };
+}
+
+export async function snapshotAsOf(date: string): Promise<Mindmap> {
+  return rewind(await loadMindmap(), date);
+}
+
+interface DiffRef {
+  id: string;
+  name: string;
+  kind?: EntityKind;
+}
+
+export interface MindDiff {
+  from: string;
+  to: string;
+  joined: Array<DiffRef & { parent?: DiffRef }>;
+  left: Array<DiffRef & { parent?: DiffRef }>;
+  moved: Array<DiffRef & { fromParent?: DiffRef; toParent?: DiffRef }>;
+  renamed: Array<{ id: string; from: string; to: string }>;
+  changed: Array<DiffRef & { fields: string[] }>;
+  links: { added: MindLink[]; removed: MindLink[] };
+}
+
+export function diffMaps(a: Mindmap, b: Mindmap, from: string, to: string): MindDiff {
+  const ref = (m: Mindmap, id: string | undefined): DiffRef | undefined => {
+    const n = id === undefined ? undefined : m.nodes[id];
+    return n ? { id: n.id, name: n.text, ...(n.kind && { kind: n.kind }) } : undefined;
+  };
+  const withParent = (m: Mindmap, n: MindNode) => {
+    const parent = ref(m, n.parentId);
+    return { ...ref(m, n.id)!, ...(parent && { parent }) };
+  };
+  const out: MindDiff = { from, to, joined: [], left: [], moved: [], renamed: [], changed: [], links: { added: [], removed: [] } };
+
+  for (const n of Object.values(b.nodes)) if (!a.nodes[n.id]) out.joined.push(withParent(b, n));
+  for (const n of Object.values(a.nodes)) if (!b.nodes[n.id]) out.left.push(withParent(a, n));
+  for (const nb of Object.values(b.nodes)) {
+    const na = a.nodes[nb.id];
+    if (!na) continue;
+    if (na.parentId !== nb.parentId) {
+      const fromParent = ref(a, na.parentId);
+      const toParent = ref(b, nb.parentId);
+      out.moved.push({ ...ref(b, nb.id)!, ...(fromParent && { fromParent }), ...(toParent && { toParent }) });
+    }
+    if (na.text !== nb.text) out.renamed.push({ id: nb.id, from: na.text, to: nb.text });
+    const fields: string[] = [];
+    if ((na.kind ?? "") !== (nb.kind ?? "")) fields.push("kind");
+    const keys = new Set([...Object.keys(na.attrs ?? {}), ...Object.keys(nb.attrs ?? {})]);
+    for (const k of keys) if ((na.attrs ?? {})[k] !== (nb.attrs ?? {})[k]) fields.push(k);
+    if (na.tags.join(",") !== nb.tags.join(",")) fields.push("tags");
+    if (fields.length > 0) out.changed.push({ ...ref(b, nb.id)!, fields });
+  }
+  const la = new Set((a.links ?? []).map((l) => l.id));
+  const lb = new Set((b.links ?? []).map((l) => l.id));
+  out.links.added = (b.links ?? []).filter((l) => !la.has(l.id));
+  out.links.removed = (a.links ?? []).filter((l) => !lb.has(l.id));
+  return out;
+}
+
+// Who joined, left, moved or was renamed between two dates (dateA earlier than dateB)
+export async function diffBetween(dateA: string, dateB: string): Promise<MindDiff> {
+  const map = await loadMindmap();
+  return diffMaps(rewind(map, dateA), rewind(map, dateB), dateA, dateB);
 }
 
 // ── Read operations (no queue needed) ────────────────────────────────────────
@@ -418,7 +669,8 @@ export async function exportHTML(): Promise<{ filePath: string; nodeCount: numbe
   const map = await loadMindmap();
   const nodeCount = Object.keys(map.nodes).length;
   const generatedAt = new Date().toLocaleString();
-  const inlinedData = JSON.stringify(map);
+  const { history: _history, ...shown } = map;
+  const inlinedData = JSON.stringify(shown);
 
   // Read library from docs/ — single source of truth, also served on GH Pages
   const libPath = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "mindkeeper-map.js");
