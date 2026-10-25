@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mindkeeper-mcp — Track your thoughts. Build your mindmap.</title>
-  <meta name="description" content="An MCP server that captures ideas from AI conversations and organizes them into a persistent, hierarchical mindmap." />
+  <meta name="description" content="An MCP server that captures ideas from AI conversations into a persistent mindmap and keeps org charts: people, teams, companies, projects, links and change history with as-of dates and CSV import." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -131,6 +131,16 @@
         <h3>Multiple export formats</h3>
         <p>Export as Markdown, Mermaid flowchart, OPML (for MindNode / OmniOutliner), or raw JSON for the browser visualizer.</p>
       </div>
+      <div class="feature-card">
+        <span class="feature-icon">🏢</span>
+        <h3>Org charts</h3>
+        <p>Add people, teams, companies and projects with <code>add_entity</code>, tie them with <code>link_entities</code>, ask <code>reports_of</code> / <code>members_of</code> / <code>projects_of</code>, import a CSV and export Mermaid or <a href="https://icedsg.github.io/mindkeeper-js/orgchart.html">mindkeeper-map</a> JSON.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🕓</span>
+        <h3>Change history</h3>
+        <p>Every edit is logged with an optional effective date. <code>snapshot_as_of</code> shows the chart on any day and <code>diff_between</code> lists who joined, left or moved. <a href="https://icedsg.github.io/mindkeeper-js/reorg.html">See a reorg diff</a>.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -208,8 +218,8 @@
 <section id="tools">
   <div class="container">
     <p class="section-label">MCP Tools</p>
-    <h2 class="section-title">Thirteen tools, zero friction</h2>
-    <p class="section-sub">Every tool is callable by your AI assistant. No configuration required beyond installation.</p>
+    <h2 class="section-title">Twenty-six tools, zero friction</h2>
+    <p class="section-sub">Every tool is callable by your AI assistant. No configuration required beyond installation. Write tools also take an optional <code>effectiveDate</code> for changes that happened earlier.</p>
 
     <div class="tools-table-wrap">
       <table>
@@ -228,7 +238,7 @@
           </tr>
           <tr>
             <td><code>update_node</code></td>
-            <td><code>nodeId</code>, <code>newText?</code>, <code>tags?</code></td>
+            <td><code>nodeId</code>, <code>newText</code>, <code>newTags?</code></td>
             <td>Edit the text or tags of an existing node</td>
           </tr>
           <tr>
@@ -285,6 +295,71 @@
             <td><code>cloud_status</code></td>
             <td>—</td>
             <td>Show current cloud sync configuration</td>
+          </tr>
+          <tr>
+            <td><code>add_entity</code></td>
+            <td><code>name</code>, <code>kind</code>, <code>parentId?</code>, <code>attrs?</code>, <code>tags?</code></td>
+            <td>Add a typed entity (person, company, team, role, project, idea) with attributes such as title or email</td>
+          </tr>
+          <tr>
+            <td><code>link_entities</code></td>
+            <td><code>from</code>, <code>to</code>, <code>type</code>, <code>label?</code></td>
+            <td>Record a relation outside the tree, e.g. a person <code>works_on</code> a project</td>
+          </tr>
+          <tr>
+            <td><code>unlink_entities</code></td>
+            <td><code>linkId?</code> or <code>from</code>, <code>to</code>, <code>type?</code></td>
+            <td>Remove a relation</td>
+          </tr>
+          <tr>
+            <td><code>move_node</code></td>
+            <td><code>nodeId</code>, <code>newParentId?</code></td>
+            <td>Re-parent a node and its subtree (new manager, new team); refuses cycles</td>
+          </tr>
+          <tr>
+            <td><code>get_history</code></td>
+            <td><code>nodeId?</code>, <code>since?</code>, <code>until?</code>, <code>limit?</code></td>
+            <td>Recorded changes, newest first, with before/after values and effective dates</td>
+          </tr>
+          <tr>
+            <td><code>snapshot_as_of</code></td>
+            <td><code>date</code></td>
+            <td>The map or org chart as it stood on a date</td>
+          </tr>
+          <tr>
+            <td><code>diff_between</code></td>
+            <td><code>dateA</code>, <code>dateB?</code></td>
+            <td>Who joined, left, moved or was renamed between two dates, plus links added/removed</td>
+          </tr>
+          <tr>
+            <td><code>projects_of</code></td>
+            <td><code>entityId</code>, <code>includeReports?</code></td>
+            <td>Projects a person, team or company is on (tree or links)</td>
+          </tr>
+          <tr>
+            <td><code>members_of</code></td>
+            <td><code>groupId</code></td>
+            <td>People in a project, company or team</td>
+          </tr>
+          <tr>
+            <td><code>reports_of</code></td>
+            <td><code>personId</code>, <code>all?</code></td>
+            <td>A person's manager and direct (or all) reports</td>
+          </tr>
+          <tr>
+            <td><code>export_orgchart</code></td>
+            <td><code>rootId?</code>, <code>format?</code></td>
+            <td>Org chart as a Mermaid flowchart TB and mindkeeper-map JSON (with links)</td>
+          </tr>
+          <tr>
+            <td><code>export_csv</code></td>
+            <td><code>rootId?</code></td>
+            <td>CSV: id,name,title,manager,kind plus other attributes</td>
+          </tr>
+          <tr>
+            <td><code>import_csv</code></td>
+            <td><code>csv?</code> or <code>filePath?</code>, <code>parentId?</code></td>
+            <td>Build or update an org chart from a CSV; edits land in the history</td>
           </tr>
         </tbody>
       </table>

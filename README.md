@@ -1,6 +1,6 @@
 # mindkeeper-mcp
 
-An MCP server that captures ideas from conversations and organises them into a persistent mindmap. Ideas are stored as nodes that can be linked to a parent, tagged, searched, exported, and synced to the cloud — surviving across sessions.
+An MCP server that captures ideas from conversations and organises them into a persistent mindmap — and keeps org charts: people, teams, companies and projects, how they are linked, and how that changed over time. Ideas are stored as nodes that can be linked to a parent, tagged, searched, exported, and synced to the cloud — surviving across sessions.
 
 Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic backups.
 
@@ -15,6 +15,9 @@ Data is stored in `~/.mindkeeper/mindmap.json` with atomic writes and automatic 
 - **Export** — Markdown, Mermaid diagram, OPML, JSON, or interactive HTML (with PNG/SVG download)
 - **Import** — build a mindmap from your Claude.ai conversation history
 - **Cloud sync** — backup and restore via private GitHub Gist
+- **Org charts** — typed entities (person, company, team, role, project), cross-links for many-to-many relations, re-parenting, and who-reports-to-whom queries
+- **Change history** — every edit is logged with an optional effective date, so you can see the chart as of any day and diff two dates
+- **CSV in and out** — import an org chart from a spreadsheet (id,name,title,manager,kind), export it back, or export Mermaid / mindkeeper-map JSON
 
 ## Installation
 
@@ -111,6 +114,21 @@ You have mindkeeper-mcp connected.
 | `import_claude_export` | Parse a `conversations.json` from Claude.ai's data export and build a mindmap from your conversation history |
 | `sync_cloud` | Push or pull the mindmap to/from a private GitHub Gist |
 | `cloud_status` | Show current cloud sync configuration |
+| `add_entity` | Add a typed entity (person, company, team, role, project, idea) with attributes such as title or email |
+| `link_entities` | Record a relation outside the tree, e.g. a person `works_on` a project |
+| `unlink_entities` | Remove a relation |
+| `move_node` | Re-parent a node and its subtree (new manager, new team); refuses cycles |
+| `get_history` | Recorded changes, newest first, with before/after values and effective dates |
+| `snapshot_as_of` | The map or org chart as it stood on a date |
+| `diff_between` | Who joined, left, moved or was renamed between two dates, plus links added/removed |
+| `projects_of` | Projects a person, team or company is on (tree or links) |
+| `members_of` | People in a project, company or team |
+| `reports_of` | A person's manager and direct (or all) reports |
+| `export_orgchart` | Org chart as a Mermaid flowchart TB and mindkeeper-map JSON (with links) |
+| `export_csv` | CSV: id,name,title,manager,kind plus other attributes |
+| `import_csv` | Build or update an org chart from a CSV; edits land in the history |
+
+Every write tool (`add_idea`, `update_node`, `delete_node`, `add_entity`, `link_entities`, `unlink_entities`, `move_node`, `import_csv`) also takes an optional `effectiveDate` (YYYY-MM-DD or ISO) for changes that happened earlier than today.
 
 ## Usage examples
 

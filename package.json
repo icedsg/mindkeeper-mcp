@@ -1,7 +1,7 @@
 {
   "name": "mindkeeper-mcp",
-  "version": "1.5.2",
-  "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap",
+  "version": "1.6.0",
+  "description": "MCP server that persistently tracks ideas from conversations and builds a mindmap, with org charts, relations and change history",
   "main": "build/index.js",
   "type": "module",
   "bin": {
@@ -33,7 +33,12 @@
     "ideas",
     "knowledge-management",
     "ai-assistant",
-    "productivity"
+    "productivity",
+    "org-chart",
+    "organization-chart",
+    "orgchart",
+    "knowledge-graph",
+    "csv"
   ],
   "homepage": "https://icedsg.github.io/mindkeeper-mcp/",
   "repository": {
