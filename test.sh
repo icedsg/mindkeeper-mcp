@@ -14,6 +14,7 @@ cd "$SCRIPT_DIR"
 # Isolated test environment — never touches real ~/.mindkeeper
 TEST_HOME="$(mktemp -d)"
 export HOME="$TEST_HOME"
+export USERPROFILE="$TEST_HOME"  # os.homedir() reads this on Windows
 RUNNER="$SCRIPT_DIR/.test-runner.mjs"
 trap 'rm -f "$RUNNER"; rm -rf "$TEST_HOME"' EXIT
 
