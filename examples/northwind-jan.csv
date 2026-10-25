@@ -1,0 +1,41 @@
+id,name,title,manager,kind,email
+maya,Maya Chen,CEO,,person,maya@northwind.example
+daniel,Daniel Okafor,CTO,maya,person,daniel@northwind.example
+priya,Priya Nair,Platform Lead,daniel,person,priya@northwind.example
+liam,Liam Walsh,Senior Engineer,priya,person,liam@northwind.example
+ana,Ana Souza,Engineer,priya,person,ana@northwind.example
+omar,Omar Haddad,Engineer,priya,person,omar@northwind.example
+yuki,Yuki Tanaka,SRE,priya,person,yuki@northwind.example
+kai,Kai Andersen,Engineer,priya,person,kai@northwind.example
+tom,Tom Becker,Product Eng Lead,daniel,person,tom@northwind.example
+chloe,Chloe Martin,Frontend Engineer,tom,person,chloe@northwind.example
+ravi,Ravi Menon,Backend Engineer,tom,person,ravi@northwind.example
+ines,Ines Duarte,Mobile Engineer,tom,person,ines@northwind.example
+ben,Ben Carter,QA Engineer,tom,person,ben@northwind.example
+sofia,Sofia Rossi,Data Lead,daniel,person,sofia@northwind.example
+arjun,Arjun Rao,Data Engineer,sofia,person,arjun@northwind.example
+mei,Mei Lin,Data Scientist,sofia,person,mei@northwind.example
+lucas,Lucas Petit,Analyst,sofia,person,lucas@northwind.example
+laura,Laura Kim,COO,maya,person,laura@northwind.example
+ahmed,Ahmed Hassan,Ops Manager,laura,person,ahmed@northwind.example
+zoe,Zoe Clarke,Ops Specialist,ahmed,person,zoe@northwind.example
+diego,Diego Morales,Logistics,ahmed,person,diego@northwind.example
+hana,Hana Novak,IT Admin,ahmed,person,hana@northwind.example
+grace,Grace Liu,Finance Manager,laura,person,grace@northwind.example
+peter,Peter Brandt,Accountant,grace,person,peter@northwind.example
+aisha,Aisha Bello,FP&A Analyst,grace,person,aisha@northwind.example
+noah,Noah Williams,People Lead,laura,person,noah@northwind.example
+emma,Emma Johansson,Recruiter,noah,person,emma@northwind.example
+james,James Patel,CRO,maya,person,james@northwind.example
+elena,Elena Garcia,Sales Director,james,person,elena@northwind.example
+marco,Marco Bianchi,Account Executive,elena,person,marco@northwind.example
+sara,Sara Levi,Account Executive,elena,person,sara@northwind.example
+rosa,Rosa Jimenez,Account Executive,elena,person,rosa@northwind.example
+kwame,Kwame Mensah,Sales Engineer,elena,person,kwame@northwind.example
+kenji,Kenji Sato,Marketing Lead,james,person,kenji@northwind.example
+olivia,Olivia Brown,Content Marketer,kenji,person,olivia@northwind.example
+felix,Felix Weber,Designer,kenji,person,felix@northwind.example
+nina,Nina Popescu,Growth Marketer,kenji,person,nina@northwind.example
+fatima,Fatima Ali,Support Lead,james,person,fatima@northwind.example
+jack,Jack Murphy,Support Engineer,fatima,person,jack@northwind.example
+lea,Lea Fischer,Support Engineer,fatima,person,lea@northwind.example

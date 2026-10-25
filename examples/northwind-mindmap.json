@@ -1,0 +1,1756 @@
+{
+  "nodes": {
+    "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c": {
+      "id": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c",
+      "text": "Maya Chen",
+      "kind": "person",
+      "attrs": {
+        "title": "CEO",
+        "email": "maya@northwind.example"
+      },
+      "children": [
+        "964f8269-a1ab-4b81-ba26-2e27946ec3b1",
+        "67400d16-8b6a-4ddf-bf15-f31edf534d93",
+        "a570484d-e77a-447f-94d1-0df870a35594",
+        "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      ],
+      "createdAt": "2026-10-25T09:33:33.714Z",
+      "updatedAt": "2026-10-25T09:33:33.726Z",
+      "tags": []
+    },
+    "964f8269-a1ab-4b81-ba26-2e27946ec3b1": {
+      "id": "964f8269-a1ab-4b81-ba26-2e27946ec3b1",
+      "text": "Daniel Okafor",
+      "kind": "person",
+      "attrs": {
+        "title": "CTO",
+        "email": "daniel@northwind.example"
+      },
+      "children": [
+        "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+        "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8",
+        "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac"
+      ],
+      "createdAt": "2026-10-25T09:33:33.714Z",
+      "updatedAt": "2026-10-25T09:33:33.726Z",
+      "tags": [],
+      "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+    },
+    "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95": {
+      "id": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+      "text": "Priya Nair",
+      "kind": "person",
+      "attrs": {
+        "title": "Platform Lead",
+        "email": "priya@northwind.example"
+      },
+      "children": [
+        "abbb9394-9d70-47f1-a800-837149023dd7",
+        "6b4c89be-94bb-4533-b1dd-ed0999df9c7c",
+        "365792db-996e-46a3-b103-ba2dc8f406ad",
+        "21b8d452-0ca6-4d16-9e84-5fa449425e35",
+        "34e0e01c-a228-4932-b0f8-93fac900ed55"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+    },
+    "abbb9394-9d70-47f1-a800-837149023dd7": {
+      "id": "abbb9394-9d70-47f1-a800-837149023dd7",
+      "text": "Liam Walsh",
+      "kind": "person",
+      "attrs": {
+        "title": "Staff Engineer",
+        "email": "liam@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.724Z",
+      "tags": [],
+      "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+    },
+    "6b4c89be-94bb-4533-b1dd-ed0999df9c7c": {
+      "id": "6b4c89be-94bb-4533-b1dd-ed0999df9c7c",
+      "text": "Ana Souza",
+      "kind": "person",
+      "attrs": {
+        "title": "Engineer",
+        "email": "ana@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+    },
+    "365792db-996e-46a3-b103-ba2dc8f406ad": {
+      "id": "365792db-996e-46a3-b103-ba2dc8f406ad",
+      "text": "Omar Haddad",
+      "kind": "person",
+      "attrs": {
+        "title": "Engineer",
+        "email": "omar@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+    },
+    "21b8d452-0ca6-4d16-9e84-5fa449425e35": {
+      "id": "21b8d452-0ca6-4d16-9e84-5fa449425e35",
+      "text": "Yuki Tanaka",
+      "kind": "person",
+      "attrs": {
+        "title": "SRE",
+        "email": "yuki@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+    },
+    "34e0e01c-a228-4932-b0f8-93fac900ed55": {
+      "id": "34e0e01c-a228-4932-b0f8-93fac900ed55",
+      "text": "Kai Andersen",
+      "kind": "person",
+      "attrs": {
+        "title": "Engineer",
+        "email": "kai@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+    },
+    "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8": {
+      "id": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8",
+      "text": "Tom Becker",
+      "kind": "person",
+      "attrs": {
+        "title": "Product Eng Lead",
+        "email": "tom@northwind.example"
+      },
+      "children": [
+        "4174f2f7-2b4b-4330-a3f2-57718b83a4b2",
+        "2060c086-914f-4838-b2b5-fb5ef94814ca",
+        "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+        "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+        "1918c731-b3f1-4d1a-8c4e-6f0662060d96"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.724Z",
+      "tags": [],
+      "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+    },
+    "4174f2f7-2b4b-4330-a3f2-57718b83a4b2": {
+      "id": "4174f2f7-2b4b-4330-a3f2-57718b83a4b2",
+      "text": "Chloe Martin",
+      "kind": "person",
+      "attrs": {
+        "title": "Frontend Engineer",
+        "email": "chloe@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+    },
+    "2060c086-914f-4838-b2b5-fb5ef94814ca": {
+      "id": "2060c086-914f-4838-b2b5-fb5ef94814ca",
+      "text": "Ravi Menon",
+      "kind": "person",
+      "attrs": {
+        "title": "Backend Engineer",
+        "email": "ravi@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+    },
+    "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7": {
+      "id": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+      "text": "Ines Duarte",
+      "kind": "person",
+      "attrs": {
+        "title": "Mobile Engineer",
+        "email": "ines@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+    },
+    "277d89dd-da34-4326-ab6c-6c8a09c2a755": {
+      "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+      "text": "Sofia Rossi",
+      "kind": "person",
+      "attrs": {
+        "title": "VP Data",
+        "email": "sofia@northwind.example"
+      },
+      "children": [
+        "c459672a-d340-4d5a-ac64-5525cde4ec68",
+        "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+        "dbc164a8-6d31-4bf2-a422-b78120cc6fc5",
+        "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+        "61ea52de-c5b9-4cbf-bb0b-63d639c2550f"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.727Z",
+      "tags": [],
+      "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+    },
+    "c459672a-d340-4d5a-ac64-5525cde4ec68": {
+      "id": "c459672a-d340-4d5a-ac64-5525cde4ec68",
+      "text": "Arjun Rao",
+      "kind": "person",
+      "attrs": {
+        "title": "Data Engineer",
+        "email": "arjun@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+    },
+    "5d383abc-85f0-4a0e-be10-607945f9fdb6": {
+      "id": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+      "text": "Mei Lin",
+      "kind": "person",
+      "attrs": {
+        "title": "Data Scientist",
+        "email": "mei@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+    },
+    "dbc164a8-6d31-4bf2-a422-b78120cc6fc5": {
+      "id": "dbc164a8-6d31-4bf2-a422-b78120cc6fc5",
+      "text": "Lucas Petit",
+      "kind": "person",
+      "attrs": {
+        "title": "Analyst",
+        "email": "lucas@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+    },
+    "67400d16-8b6a-4ddf-bf15-f31edf534d93": {
+      "id": "67400d16-8b6a-4ddf-bf15-f31edf534d93",
+      "text": "Laura Kim",
+      "kind": "person",
+      "attrs": {
+        "title": "COO",
+        "email": "laura@northwind.example"
+      },
+      "children": [
+        "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d",
+        "ba875796-d0c3-4db3-80a5-6ea9d75f2812",
+        "001ee98f-2d23-4be0-bb0b-9015545bf178",
+        "2a2d19d1-459d-4807-8615-5e7734e3c90c"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.727Z",
+      "tags": [],
+      "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+    },
+    "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d": {
+      "id": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d",
+      "text": "Ahmed Hassan",
+      "kind": "person",
+      "attrs": {
+        "title": "Ops Manager",
+        "email": "ahmed@northwind.example"
+      },
+      "children": [
+        "3db26d7c-9e83-432e-b3c7-671acd554bb7",
+        "e4a212c7-b42f-4043-b79d-811b9a6d6018",
+        "6b5c33f8-9f0c-47bb-9910-ba51f593613f"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+    },
+    "3db26d7c-9e83-432e-b3c7-671acd554bb7": {
+      "id": "3db26d7c-9e83-432e-b3c7-671acd554bb7",
+      "text": "Zoe Clarke",
+      "kind": "person",
+      "attrs": {
+        "title": "Ops Specialist",
+        "email": "zoe@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+    },
+    "e4a212c7-b42f-4043-b79d-811b9a6d6018": {
+      "id": "e4a212c7-b42f-4043-b79d-811b9a6d6018",
+      "text": "Diego Morales",
+      "kind": "person",
+      "attrs": {
+        "title": "Logistics",
+        "email": "diego@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+    },
+    "6b5c33f8-9f0c-47bb-9910-ba51f593613f": {
+      "id": "6b5c33f8-9f0c-47bb-9910-ba51f593613f",
+      "text": "Hana Novak",
+      "kind": "person",
+      "attrs": {
+        "title": "IT Admin",
+        "email": "hana@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+    },
+    "ba875796-d0c3-4db3-80a5-6ea9d75f2812": {
+      "id": "ba875796-d0c3-4db3-80a5-6ea9d75f2812",
+      "text": "Grace Liu",
+      "kind": "person",
+      "attrs": {
+        "title": "Finance Manager",
+        "email": "grace@northwind.example"
+      },
+      "children": [
+        "3544dab3-018a-4cef-9933-c4cf8a1f9c32",
+        "53d11046-3b32-441a-93dc-9cfc31f4c46b"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+    },
+    "3544dab3-018a-4cef-9933-c4cf8a1f9c32": {
+      "id": "3544dab3-018a-4cef-9933-c4cf8a1f9c32",
+      "text": "Peter Brandt",
+      "kind": "person",
+      "attrs": {
+        "title": "Accountant",
+        "email": "peter@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "ba875796-d0c3-4db3-80a5-6ea9d75f2812"
+    },
+    "53d11046-3b32-441a-93dc-9cfc31f4c46b": {
+      "id": "53d11046-3b32-441a-93dc-9cfc31f4c46b",
+      "text": "Aisha Bello",
+      "kind": "person",
+      "attrs": {
+        "title": "FP&A Analyst",
+        "email": "aisha@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "ba875796-d0c3-4db3-80a5-6ea9d75f2812"
+    },
+    "001ee98f-2d23-4be0-bb0b-9015545bf178": {
+      "id": "001ee98f-2d23-4be0-bb0b-9015545bf178",
+      "text": "Noah Williams",
+      "kind": "person",
+      "attrs": {
+        "title": "People Lead",
+        "email": "noah@northwind.example"
+      },
+      "children": [
+        "56e055fc-59db-4c5e-8ac5-7693166f5352",
+        "1409a85c-fe57-4bb9-8b36-98a5863b12cc"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.725Z",
+      "tags": [],
+      "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+    },
+    "56e055fc-59db-4c5e-8ac5-7693166f5352": {
+      "id": "56e055fc-59db-4c5e-8ac5-7693166f5352",
+      "text": "Emma Johansson",
+      "kind": "person",
+      "attrs": {
+        "title": "Recruiter",
+        "email": "emma@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "001ee98f-2d23-4be0-bb0b-9015545bf178"
+    },
+    "a570484d-e77a-447f-94d1-0df870a35594": {
+      "id": "a570484d-e77a-447f-94d1-0df870a35594",
+      "text": "James Patel",
+      "kind": "person",
+      "attrs": {
+        "title": "CRO",
+        "email": "james@northwind.example"
+      },
+      "children": [
+        "103bf783-3892-49db-9830-3dacfbf2b657",
+        "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.727Z",
+      "tags": [],
+      "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+    },
+    "103bf783-3892-49db-9830-3dacfbf2b657": {
+      "id": "103bf783-3892-49db-9830-3dacfbf2b657",
+      "text": "Elena Garcia",
+      "kind": "person",
+      "attrs": {
+        "title": "VP Sales",
+        "email": "elena@northwind.example"
+      },
+      "children": [
+        "402bb0da-dc73-4676-8211-326a84b6250f",
+        "bf2ae625-172e-4adf-b1ec-eb85d797db5a",
+        "016f38a4-2f40-48ec-a351-44656c5bae12",
+        "c6cefc66-6e41-448a-a3aa-2cfdc054c406"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.728Z",
+      "tags": [],
+      "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+    },
+    "402bb0da-dc73-4676-8211-326a84b6250f": {
+      "id": "402bb0da-dc73-4676-8211-326a84b6250f",
+      "text": "Marco Bianchi",
+      "kind": "person",
+      "attrs": {
+        "title": "Account Executive",
+        "email": "marco@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+    },
+    "bf2ae625-172e-4adf-b1ec-eb85d797db5a": {
+      "id": "bf2ae625-172e-4adf-b1ec-eb85d797db5a",
+      "text": "Sara Levi",
+      "kind": "person",
+      "attrs": {
+        "title": "Account Executive",
+        "email": "sara@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+    },
+    "016f38a4-2f40-48ec-a351-44656c5bae12": {
+      "id": "016f38a4-2f40-48ec-a351-44656c5bae12",
+      "text": "Rosa Jimenez",
+      "kind": "person",
+      "attrs": {
+        "title": "Account Executive",
+        "email": "rosa@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+    },
+    "c6cefc66-6e41-448a-a3aa-2cfdc054c406": {
+      "id": "c6cefc66-6e41-448a-a3aa-2cfdc054c406",
+      "text": "Kwame Mensah",
+      "kind": "person",
+      "attrs": {
+        "title": "Sales Engineer",
+        "email": "kwame@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+    },
+    "b6fce3ce-a71e-4d81-b449-646a1e407d87": {
+      "id": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+      "text": "Kenji Sato",
+      "kind": "person",
+      "attrs": {
+        "title": "Marketing Lead",
+        "email": "kenji@northwind.example"
+      },
+      "children": [
+        "b86a4e8b-43f1-4b16-919f-9b20b553667e",
+        "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.725Z",
+      "tags": [],
+      "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+    },
+    "b86a4e8b-43f1-4b16-919f-9b20b553667e": {
+      "id": "b86a4e8b-43f1-4b16-919f-9b20b553667e",
+      "text": "Olivia Brown",
+      "kind": "person",
+      "attrs": {
+        "title": "Content Marketer",
+        "email": "olivia@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+    },
+    "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb": {
+      "id": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+      "text": "Felix Weber",
+      "kind": "person",
+      "attrs": {
+        "title": "Designer",
+        "email": "felix@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+    },
+    "2a2d19d1-459d-4807-8615-5e7734e3c90c": {
+      "id": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+      "text": "Fatima Ali",
+      "kind": "person",
+      "attrs": {
+        "title": "Support Lead",
+        "email": "fatima@northwind.example"
+      },
+      "children": [
+        "13f77199-77d8-464c-865d-3e39f3701a39",
+        "a5b870cf-139c-4e67-a093-89a0cdd26739"
+      ],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.727Z",
+      "tags": [],
+      "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+    },
+    "13f77199-77d8-464c-865d-3e39f3701a39": {
+      "id": "13f77199-77d8-464c-865d-3e39f3701a39",
+      "text": "Jack Murphy",
+      "kind": "person",
+      "attrs": {
+        "title": "Support Engineer",
+        "email": "jack@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "2a2d19d1-459d-4807-8615-5e7734e3c90c"
+    },
+    "a5b870cf-139c-4e67-a093-89a0cdd26739": {
+      "id": "a5b870cf-139c-4e67-a093-89a0cdd26739",
+      "text": "Lea Fischer",
+      "kind": "person",
+      "attrs": {
+        "title": "Support Engineer",
+        "email": "lea@northwind.example"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.715Z",
+      "updatedAt": "2026-10-25T09:33:33.715Z",
+      "tags": [],
+      "parentId": "2a2d19d1-459d-4807-8615-5e7734e3c90c"
+    },
+    "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac": {
+      "id": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+      "text": "Atlas API",
+      "kind": "project",
+      "attrs": {
+        "status": "active"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.717Z",
+      "updatedAt": "2026-10-25T09:33:33.717Z",
+      "tags": [],
+      "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+    },
+    "06c9cf8e-743b-43b0-8be3-486cd0c78fef": {
+      "id": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+      "text": "Beacon mobile app",
+      "kind": "project",
+      "attrs": {
+        "status": "active"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.717Z",
+      "updatedAt": "2026-10-25T09:33:33.717Z",
+      "tags": [],
+      "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+    },
+    "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4": {
+      "id": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+      "text": "Customer insights",
+      "kind": "project",
+      "attrs": {
+        "status": "active"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.718Z",
+      "updatedAt": "2026-10-25T09:33:33.718Z",
+      "tags": [],
+      "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+    },
+    "61ea52de-c5b9-4cbf-bb0b-63d639c2550f": {
+      "id": "61ea52de-c5b9-4cbf-bb0b-63d639c2550f",
+      "text": "Tariq Aziz",
+      "kind": "person",
+      "attrs": {
+        "title": "ML Engineer",
+        "start": "2026-03-02"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.723Z",
+      "updatedAt": "2026-10-25T09:33:33.723Z",
+      "tags": [],
+      "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+    },
+    "1918c731-b3f1-4d1a-8c4e-6f0662060d96": {
+      "id": "1918c731-b3f1-4d1a-8c4e-6f0662060d96",
+      "text": "Julia Costa",
+      "kind": "person",
+      "attrs": {
+        "title": "Frontend Engineer",
+        "start": "2026-04-13"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.724Z",
+      "updatedAt": "2026-10-25T09:33:33.724Z",
+      "tags": [],
+      "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+    },
+    "1409a85c-fe57-4bb9-8b36-98a5863b12cc": {
+      "id": "1409a85c-fe57-4bb9-8b36-98a5863b12cc",
+      "text": "Sam Okoro",
+      "kind": "person",
+      "attrs": {
+        "title": "People Partner",
+        "start": "2026-05-04"
+      },
+      "children": [],
+      "createdAt": "2026-10-25T09:33:33.725Z",
+      "updatedAt": "2026-10-25T09:33:33.725Z",
+      "tags": [],
+      "parentId": "001ee98f-2d23-4be0-bb0b-9015545bf178"
+    }
+  },
+  "rootId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c",
+  "history": [
+    {
+      "at": "2026-10-25T09:33:33.714Z",
+      "op": "add",
+      "nodeId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c",
+      "after": {
+        "id": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c",
+        "text": "Maya Chen",
+        "kind": "person",
+        "attrs": {
+          "title": "CEO",
+          "email": "maya@northwind.example"
+        },
+        "tags": []
+      },
+      "rootBefore": null,
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1",
+      "after": {
+        "id": "964f8269-a1ab-4b81-ba26-2e27946ec3b1",
+        "text": "Daniel Okafor",
+        "kind": "person",
+        "attrs": {
+          "title": "CTO",
+          "email": "daniel@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+      "after": {
+        "id": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+        "text": "Priya Nair",
+        "kind": "person",
+        "attrs": {
+          "title": "Platform Lead",
+          "email": "priya@northwind.example"
+        },
+        "tags": [],
+        "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "abbb9394-9d70-47f1-a800-837149023dd7",
+      "after": {
+        "id": "abbb9394-9d70-47f1-a800-837149023dd7",
+        "text": "Liam Walsh",
+        "kind": "person",
+        "attrs": {
+          "title": "Senior Engineer",
+          "email": "liam@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "6b4c89be-94bb-4533-b1dd-ed0999df9c7c",
+      "after": {
+        "id": "6b4c89be-94bb-4533-b1dd-ed0999df9c7c",
+        "text": "Ana Souza",
+        "kind": "person",
+        "attrs": {
+          "title": "Engineer",
+          "email": "ana@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "365792db-996e-46a3-b103-ba2dc8f406ad",
+      "after": {
+        "id": "365792db-996e-46a3-b103-ba2dc8f406ad",
+        "text": "Omar Haddad",
+        "kind": "person",
+        "attrs": {
+          "title": "Engineer",
+          "email": "omar@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "21b8d452-0ca6-4d16-9e84-5fa449425e35",
+      "after": {
+        "id": "21b8d452-0ca6-4d16-9e84-5fa449425e35",
+        "text": "Yuki Tanaka",
+        "kind": "person",
+        "attrs": {
+          "title": "SRE",
+          "email": "yuki@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "34e0e01c-a228-4932-b0f8-93fac900ed55",
+      "after": {
+        "id": "34e0e01c-a228-4932-b0f8-93fac900ed55",
+        "text": "Kai Andersen",
+        "kind": "person",
+        "attrs": {
+          "title": "Engineer",
+          "email": "kai@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8",
+      "after": {
+        "id": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8",
+        "text": "Tom Becker",
+        "kind": "person",
+        "attrs": {
+          "title": "Product Eng Lead",
+          "email": "tom@northwind.example"
+        },
+        "tags": [],
+        "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "4174f2f7-2b4b-4330-a3f2-57718b83a4b2",
+      "after": {
+        "id": "4174f2f7-2b4b-4330-a3f2-57718b83a4b2",
+        "text": "Chloe Martin",
+        "kind": "person",
+        "attrs": {
+          "title": "Frontend Engineer",
+          "email": "chloe@northwind.example"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "2060c086-914f-4838-b2b5-fb5ef94814ca",
+      "after": {
+        "id": "2060c086-914f-4838-b2b5-fb5ef94814ca",
+        "text": "Ravi Menon",
+        "kind": "person",
+        "attrs": {
+          "title": "Backend Engineer",
+          "email": "ravi@northwind.example"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+      "after": {
+        "id": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+        "text": "Ines Duarte",
+        "kind": "person",
+        "attrs": {
+          "title": "Mobile Engineer",
+          "email": "ines@northwind.example"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "ef6dbf9a-8612-4bc9-ae9d-bf3e88fbf5a1",
+      "after": {
+        "id": "ef6dbf9a-8612-4bc9-ae9d-bf3e88fbf5a1",
+        "text": "Ben Carter",
+        "kind": "person",
+        "attrs": {
+          "title": "QA Engineer",
+          "email": "ben@northwind.example"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+      "after": {
+        "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+        "text": "Sofia Rossi",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Lead",
+          "email": "sofia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "c459672a-d340-4d5a-ac64-5525cde4ec68",
+      "after": {
+        "id": "c459672a-d340-4d5a-ac64-5525cde4ec68",
+        "text": "Arjun Rao",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Engineer",
+          "email": "arjun@northwind.example"
+        },
+        "tags": [],
+        "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+      "after": {
+        "id": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+        "text": "Mei Lin",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Scientist",
+          "email": "mei@northwind.example"
+        },
+        "tags": [],
+        "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "dbc164a8-6d31-4bf2-a422-b78120cc6fc5",
+      "after": {
+        "id": "dbc164a8-6d31-4bf2-a422-b78120cc6fc5",
+        "text": "Lucas Petit",
+        "kind": "person",
+        "attrs": {
+          "title": "Analyst",
+          "email": "lucas@northwind.example"
+        },
+        "tags": [],
+        "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "67400d16-8b6a-4ddf-bf15-f31edf534d93",
+      "after": {
+        "id": "67400d16-8b6a-4ddf-bf15-f31edf534d93",
+        "text": "Laura Kim",
+        "kind": "person",
+        "attrs": {
+          "title": "COO",
+          "email": "laura@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d",
+      "after": {
+        "id": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d",
+        "text": "Ahmed Hassan",
+        "kind": "person",
+        "attrs": {
+          "title": "Ops Manager",
+          "email": "ahmed@northwind.example"
+        },
+        "tags": [],
+        "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "3db26d7c-9e83-432e-b3c7-671acd554bb7",
+      "after": {
+        "id": "3db26d7c-9e83-432e-b3c7-671acd554bb7",
+        "text": "Zoe Clarke",
+        "kind": "person",
+        "attrs": {
+          "title": "Ops Specialist",
+          "email": "zoe@northwind.example"
+        },
+        "tags": [],
+        "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "e4a212c7-b42f-4043-b79d-811b9a6d6018",
+      "after": {
+        "id": "e4a212c7-b42f-4043-b79d-811b9a6d6018",
+        "text": "Diego Morales",
+        "kind": "person",
+        "attrs": {
+          "title": "Logistics",
+          "email": "diego@northwind.example"
+        },
+        "tags": [],
+        "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "6b5c33f8-9f0c-47bb-9910-ba51f593613f",
+      "after": {
+        "id": "6b5c33f8-9f0c-47bb-9910-ba51f593613f",
+        "text": "Hana Novak",
+        "kind": "person",
+        "attrs": {
+          "title": "IT Admin",
+          "email": "hana@northwind.example"
+        },
+        "tags": [],
+        "parentId": "2c2c1a54-2a7c-44ed-b1d3-6d00d7c2639d"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "ba875796-d0c3-4db3-80a5-6ea9d75f2812",
+      "after": {
+        "id": "ba875796-d0c3-4db3-80a5-6ea9d75f2812",
+        "text": "Grace Liu",
+        "kind": "person",
+        "attrs": {
+          "title": "Finance Manager",
+          "email": "grace@northwind.example"
+        },
+        "tags": [],
+        "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "3544dab3-018a-4cef-9933-c4cf8a1f9c32",
+      "after": {
+        "id": "3544dab3-018a-4cef-9933-c4cf8a1f9c32",
+        "text": "Peter Brandt",
+        "kind": "person",
+        "attrs": {
+          "title": "Accountant",
+          "email": "peter@northwind.example"
+        },
+        "tags": [],
+        "parentId": "ba875796-d0c3-4db3-80a5-6ea9d75f2812"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "53d11046-3b32-441a-93dc-9cfc31f4c46b",
+      "after": {
+        "id": "53d11046-3b32-441a-93dc-9cfc31f4c46b",
+        "text": "Aisha Bello",
+        "kind": "person",
+        "attrs": {
+          "title": "FP&A Analyst",
+          "email": "aisha@northwind.example"
+        },
+        "tags": [],
+        "parentId": "ba875796-d0c3-4db3-80a5-6ea9d75f2812"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "001ee98f-2d23-4be0-bb0b-9015545bf178",
+      "after": {
+        "id": "001ee98f-2d23-4be0-bb0b-9015545bf178",
+        "text": "Noah Williams",
+        "kind": "person",
+        "attrs": {
+          "title": "People Lead",
+          "email": "noah@northwind.example"
+        },
+        "tags": [],
+        "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "56e055fc-59db-4c5e-8ac5-7693166f5352",
+      "after": {
+        "id": "56e055fc-59db-4c5e-8ac5-7693166f5352",
+        "text": "Emma Johansson",
+        "kind": "person",
+        "attrs": {
+          "title": "Recruiter",
+          "email": "emma@northwind.example"
+        },
+        "tags": [],
+        "parentId": "001ee98f-2d23-4be0-bb0b-9015545bf178"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "a570484d-e77a-447f-94d1-0df870a35594",
+      "after": {
+        "id": "a570484d-e77a-447f-94d1-0df870a35594",
+        "text": "James Patel",
+        "kind": "person",
+        "attrs": {
+          "title": "CRO",
+          "email": "james@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "103bf783-3892-49db-9830-3dacfbf2b657",
+      "after": {
+        "id": "103bf783-3892-49db-9830-3dacfbf2b657",
+        "text": "Elena Garcia",
+        "kind": "person",
+        "attrs": {
+          "title": "Sales Director",
+          "email": "elena@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "402bb0da-dc73-4676-8211-326a84b6250f",
+      "after": {
+        "id": "402bb0da-dc73-4676-8211-326a84b6250f",
+        "text": "Marco Bianchi",
+        "kind": "person",
+        "attrs": {
+          "title": "Account Executive",
+          "email": "marco@northwind.example"
+        },
+        "tags": [],
+        "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "bf2ae625-172e-4adf-b1ec-eb85d797db5a",
+      "after": {
+        "id": "bf2ae625-172e-4adf-b1ec-eb85d797db5a",
+        "text": "Sara Levi",
+        "kind": "person",
+        "attrs": {
+          "title": "Account Executive",
+          "email": "sara@northwind.example"
+        },
+        "tags": [],
+        "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "016f38a4-2f40-48ec-a351-44656c5bae12",
+      "after": {
+        "id": "016f38a4-2f40-48ec-a351-44656c5bae12",
+        "text": "Rosa Jimenez",
+        "kind": "person",
+        "attrs": {
+          "title": "Account Executive",
+          "email": "rosa@northwind.example"
+        },
+        "tags": [],
+        "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "c6cefc66-6e41-448a-a3aa-2cfdc054c406",
+      "after": {
+        "id": "c6cefc66-6e41-448a-a3aa-2cfdc054c406",
+        "text": "Kwame Mensah",
+        "kind": "person",
+        "attrs": {
+          "title": "Sales Engineer",
+          "email": "kwame@northwind.example"
+        },
+        "tags": [],
+        "parentId": "103bf783-3892-49db-9830-3dacfbf2b657"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+      "after": {
+        "id": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+        "text": "Kenji Sato",
+        "kind": "person",
+        "attrs": {
+          "title": "Marketing Lead",
+          "email": "kenji@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "b86a4e8b-43f1-4b16-919f-9b20b553667e",
+      "after": {
+        "id": "b86a4e8b-43f1-4b16-919f-9b20b553667e",
+        "text": "Olivia Brown",
+        "kind": "person",
+        "attrs": {
+          "title": "Content Marketer",
+          "email": "olivia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+      "after": {
+        "id": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+        "text": "Felix Weber",
+        "kind": "person",
+        "attrs": {
+          "title": "Designer",
+          "email": "felix@northwind.example"
+        },
+        "tags": [],
+        "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "dec7b597-cf4a-4633-ae03-8c272353f062",
+      "after": {
+        "id": "dec7b597-cf4a-4633-ae03-8c272353f062",
+        "text": "Nina Popescu",
+        "kind": "person",
+        "attrs": {
+          "title": "Growth Marketer",
+          "email": "nina@northwind.example"
+        },
+        "tags": [],
+        "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+      "after": {
+        "id": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+        "text": "Fatima Ali",
+        "kind": "person",
+        "attrs": {
+          "title": "Support Lead",
+          "email": "fatima@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "13f77199-77d8-464c-865d-3e39f3701a39",
+      "after": {
+        "id": "13f77199-77d8-464c-865d-3e39f3701a39",
+        "text": "Jack Murphy",
+        "kind": "person",
+        "attrs": {
+          "title": "Support Engineer",
+          "email": "jack@northwind.example"
+        },
+        "tags": [],
+        "parentId": "2a2d19d1-459d-4807-8615-5e7734e3c90c"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.715Z",
+      "op": "add",
+      "nodeId": "a5b870cf-139c-4e67-a093-89a0cdd26739",
+      "after": {
+        "id": "a5b870cf-139c-4e67-a093-89a0cdd26739",
+        "text": "Lea Fischer",
+        "kind": "person",
+        "attrs": {
+          "title": "Support Engineer",
+          "email": "lea@northwind.example"
+        },
+        "tags": [],
+        "parentId": "2a2d19d1-459d-4807-8615-5e7734e3c90c"
+      },
+      "effectiveDate": "2026-01-05"
+    },
+    {
+      "at": "2026-10-25T09:33:33.717Z",
+      "op": "add",
+      "nodeId": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+      "after": {
+        "id": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+        "text": "Atlas API",
+        "kind": "project",
+        "attrs": {
+          "status": "active"
+        },
+        "tags": [],
+        "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+      },
+      "effectiveDate": "2026-01-12"
+    },
+    {
+      "at": "2026-10-25T09:33:33.717Z",
+      "op": "add",
+      "nodeId": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+      "after": {
+        "id": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+        "text": "Beacon mobile app",
+        "kind": "project",
+        "attrs": {
+          "status": "active"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-01-12"
+    },
+    {
+      "at": "2026-10-25T09:33:33.718Z",
+      "op": "add",
+      "nodeId": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+      "after": {
+        "id": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+        "text": "Customer insights",
+        "kind": "project",
+        "attrs": {
+          "status": "active"
+        },
+        "tags": [],
+        "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      },
+      "effectiveDate": "2026-02-02"
+    },
+    {
+      "at": "2026-10-25T09:33:33.719Z",
+      "op": "link",
+      "nodeId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+      "linkId": "f8a7dd9c-e716-4f44-98da-ad528abb3fa6",
+      "after": {
+        "id": "f8a7dd9c-e716-4f44-98da-ad528abb3fa6",
+        "from": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+        "to": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+        "type": "leads",
+        "createdAt": "2026-10-25T09:33:33.719Z"
+      },
+      "effectiveDate": "2026-01-12"
+    },
+    {
+      "at": "2026-10-25T09:33:33.719Z",
+      "op": "link",
+      "nodeId": "abbb9394-9d70-47f1-a800-837149023dd7",
+      "linkId": "caf9b090-096c-4bc3-bd37-e40d5daaae45",
+      "after": {
+        "id": "caf9b090-096c-4bc3-bd37-e40d5daaae45",
+        "from": "abbb9394-9d70-47f1-a800-837149023dd7",
+        "to": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+        "type": "works on",
+        "createdAt": "2026-10-25T09:33:33.719Z"
+      },
+      "effectiveDate": "2026-01-12"
+    },
+    {
+      "at": "2026-10-25T09:33:33.720Z",
+      "op": "link",
+      "nodeId": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+      "linkId": "e33dcd94-7d46-47db-b76d-c63d547c6502",
+      "after": {
+        "id": "e33dcd94-7d46-47db-b76d-c63d547c6502",
+        "from": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+        "to": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+        "type": "works on",
+        "createdAt": "2026-10-25T09:33:33.720Z"
+      },
+      "effectiveDate": "2026-01-12"
+    },
+    {
+      "at": "2026-10-25T09:33:33.721Z",
+      "op": "link",
+      "nodeId": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+      "linkId": "36390523-6ee7-4f2d-a5cc-e974163fd579",
+      "after": {
+        "id": "36390523-6ee7-4f2d-a5cc-e974163fd579",
+        "from": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+        "to": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+        "type": "designs",
+        "createdAt": "2026-10-25T09:33:33.721Z"
+      },
+      "effectiveDate": "2026-01-20"
+    },
+    {
+      "at": "2026-10-25T09:33:33.721Z",
+      "op": "link",
+      "nodeId": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+      "linkId": "2ab6f0cb-d213-4069-8419-0494a0a93917",
+      "after": {
+        "id": "2ab6f0cb-d213-4069-8419-0494a0a93917",
+        "from": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+        "to": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+        "type": "works on",
+        "createdAt": "2026-10-25T09:33:33.721Z"
+      },
+      "effectiveDate": "2026-02-02"
+    },
+    {
+      "at": "2026-10-25T09:33:33.722Z",
+      "op": "link",
+      "nodeId": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+      "linkId": "c6fd33eb-124f-4b18-950c-3846b4ef78b7",
+      "after": {
+        "id": "c6fd33eb-124f-4b18-950c-3846b4ef78b7",
+        "from": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+        "to": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+        "type": "sponsor",
+        "createdAt": "2026-10-25T09:33:33.722Z"
+      },
+      "effectiveDate": "2026-02-02"
+    },
+    {
+      "at": "2026-10-25T09:33:33.722Z",
+      "op": "delete",
+      "nodeId": "ef6dbf9a-8612-4bc9-ae9d-bf3e88fbf5a1",
+      "before": {
+        "id": "ef6dbf9a-8612-4bc9-ae9d-bf3e88fbf5a1",
+        "text": "Ben Carter",
+        "kind": "person",
+        "attrs": {
+          "title": "QA Engineer",
+          "email": "ben@northwind.example"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-03-31"
+    },
+    {
+      "at": "2026-10-25T09:33:33.723Z",
+      "op": "add",
+      "nodeId": "61ea52de-c5b9-4cbf-bb0b-63d639c2550f",
+      "after": {
+        "id": "61ea52de-c5b9-4cbf-bb0b-63d639c2550f",
+        "text": "Tariq Aziz",
+        "kind": "person",
+        "attrs": {
+          "title": "ML Engineer",
+          "start": "2026-03-02"
+        },
+        "tags": [],
+        "parentId": "277d89dd-da34-4326-ab6c-6c8a09c2a755"
+      },
+      "effectiveDate": "2026-03-02"
+    },
+    {
+      "at": "2026-10-25T09:33:33.724Z",
+      "op": "update",
+      "nodeId": "abbb9394-9d70-47f1-a800-837149023dd7",
+      "before": {
+        "id": "abbb9394-9d70-47f1-a800-837149023dd7",
+        "text": "Liam Walsh",
+        "kind": "person",
+        "attrs": {
+          "title": "Senior Engineer",
+          "email": "liam@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "after": {
+        "id": "abbb9394-9d70-47f1-a800-837149023dd7",
+        "text": "Liam Walsh",
+        "kind": "person",
+        "attrs": {
+          "title": "Staff Engineer",
+          "email": "liam@northwind.example"
+        },
+        "tags": [],
+        "parentId": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95"
+      },
+      "effectiveDate": "2026-04-01"
+    },
+    {
+      "at": "2026-10-25T09:33:33.724Z",
+      "op": "add",
+      "nodeId": "1918c731-b3f1-4d1a-8c4e-6f0662060d96",
+      "after": {
+        "id": "1918c731-b3f1-4d1a-8c4e-6f0662060d96",
+        "text": "Julia Costa",
+        "kind": "person",
+        "attrs": {
+          "title": "Frontend Engineer",
+          "start": "2026-04-13"
+        },
+        "tags": [],
+        "parentId": "99e6bfc4-842d-450d-b9fb-6d8d84a65ef8"
+      },
+      "effectiveDate": "2026-04-13"
+    },
+    {
+      "at": "2026-10-25T09:33:33.725Z",
+      "op": "add",
+      "nodeId": "1409a85c-fe57-4bb9-8b36-98a5863b12cc",
+      "after": {
+        "id": "1409a85c-fe57-4bb9-8b36-98a5863b12cc",
+        "text": "Sam Okoro",
+        "kind": "person",
+        "attrs": {
+          "title": "People Partner",
+          "start": "2026-05-04"
+        },
+        "tags": [],
+        "parentId": "001ee98f-2d23-4be0-bb0b-9015545bf178"
+      },
+      "effectiveDate": "2026-05-04"
+    },
+    {
+      "at": "2026-10-25T09:33:33.725Z",
+      "op": "delete",
+      "nodeId": "dec7b597-cf4a-4633-ae03-8c272353f062",
+      "before": {
+        "id": "dec7b597-cf4a-4633-ae03-8c272353f062",
+        "text": "Nina Popescu",
+        "kind": "person",
+        "attrs": {
+          "title": "Growth Marketer",
+          "email": "nina@northwind.example"
+        },
+        "tags": [],
+        "parentId": "b6fce3ce-a71e-4d81-b449-646a1e407d87"
+      },
+      "effectiveDate": "2026-05-15"
+    },
+    {
+      "at": "2026-10-25T09:33:33.726Z",
+      "op": "move",
+      "nodeId": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+      "before": {
+        "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+        "text": "Sofia Rossi",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Lead",
+          "email": "sofia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "964f8269-a1ab-4b81-ba26-2e27946ec3b1"
+      },
+      "after": {
+        "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+        "text": "Sofia Rossi",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Lead",
+          "email": "sofia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "effectiveDate": "2026-06-01"
+    },
+    {
+      "at": "2026-10-25T09:33:33.727Z",
+      "op": "update",
+      "nodeId": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+      "before": {
+        "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+        "text": "Sofia Rossi",
+        "kind": "person",
+        "attrs": {
+          "title": "Data Lead",
+          "email": "sofia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "after": {
+        "id": "277d89dd-da34-4326-ab6c-6c8a09c2a755",
+        "text": "Sofia Rossi",
+        "kind": "person",
+        "attrs": {
+          "title": "VP Data",
+          "email": "sofia@northwind.example"
+        },
+        "tags": [],
+        "parentId": "cd4a5263-bf0d-4c45-89fa-6c9f1a8c2c5c"
+      },
+      "effectiveDate": "2026-06-01"
+    },
+    {
+      "at": "2026-10-25T09:33:33.727Z",
+      "op": "move",
+      "nodeId": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+      "before": {
+        "id": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+        "text": "Fatima Ali",
+        "kind": "person",
+        "attrs": {
+          "title": "Support Lead",
+          "email": "fatima@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "after": {
+        "id": "2a2d19d1-459d-4807-8615-5e7734e3c90c",
+        "text": "Fatima Ali",
+        "kind": "person",
+        "attrs": {
+          "title": "Support Lead",
+          "email": "fatima@northwind.example"
+        },
+        "tags": [],
+        "parentId": "67400d16-8b6a-4ddf-bf15-f31edf534d93"
+      },
+      "effectiveDate": "2026-06-01"
+    },
+    {
+      "at": "2026-10-25T09:33:33.728Z",
+      "op": "update",
+      "nodeId": "103bf783-3892-49db-9830-3dacfbf2b657",
+      "before": {
+        "id": "103bf783-3892-49db-9830-3dacfbf2b657",
+        "text": "Elena Garcia",
+        "kind": "person",
+        "attrs": {
+          "title": "Sales Director",
+          "email": "elena@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "after": {
+        "id": "103bf783-3892-49db-9830-3dacfbf2b657",
+        "text": "Elena Garcia",
+        "kind": "person",
+        "attrs": {
+          "title": "VP Sales",
+          "email": "elena@northwind.example"
+        },
+        "tags": [],
+        "parentId": "a570484d-e77a-447f-94d1-0df870a35594"
+      },
+      "effectiveDate": "2026-07-01"
+    }
+  ],
+  "links": [
+    {
+      "id": "f8a7dd9c-e716-4f44-98da-ad528abb3fa6",
+      "from": "6440e9dd-dc8a-477e-9dcc-b82cc49f3e95",
+      "to": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+      "type": "leads",
+      "createdAt": "2026-10-25T09:33:33.719Z"
+    },
+    {
+      "id": "caf9b090-096c-4bc3-bd37-e40d5daaae45",
+      "from": "abbb9394-9d70-47f1-a800-837149023dd7",
+      "to": "fb9d199e-a4e8-4734-91b9-7256cfa5a7ac",
+      "type": "works on",
+      "createdAt": "2026-10-25T09:33:33.719Z"
+    },
+    {
+      "id": "e33dcd94-7d46-47db-b76d-c63d547c6502",
+      "from": "b3073e94-4e99-4962-a8fd-f5d8e89c8eb7",
+      "to": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+      "type": "works on",
+      "createdAt": "2026-10-25T09:33:33.720Z"
+    },
+    {
+      "id": "36390523-6ee7-4f2d-a5cc-e974163fd579",
+      "from": "8fdcfcf9-6168-49c5-b15e-61399c0fe2cb",
+      "to": "06c9cf8e-743b-43b0-8be3-486cd0c78fef",
+      "type": "designs",
+      "createdAt": "2026-10-25T09:33:33.721Z"
+    },
+    {
+      "id": "2ab6f0cb-d213-4069-8419-0494a0a93917",
+      "from": "5d383abc-85f0-4a0e-be10-607945f9fdb6",
+      "to": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+      "type": "works on",
+      "createdAt": "2026-10-25T09:33:33.721Z"
+    },
+    {
+      "id": "c6fd33eb-124f-4b18-950c-3846b4ef78b7",
+      "from": "b6fce3ce-a71e-4d81-b449-646a1e407d87",
+      "to": "9b8b0c16-8ab0-49bc-b2c9-48c2eef390e4",
+      "type": "sponsor",
+      "createdAt": "2026-10-25T09:33:33.722Z"
+    }
+  ]
+}

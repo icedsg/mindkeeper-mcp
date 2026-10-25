@@ -154,6 +154,40 @@ export_html   # opens in browser — drag, zoom, download PNG or SVG from the to
 export_json   # drop the output into the visualizer at the project website
 ```
 
+## Org chart walkthrough
+
+The [`examples/`](examples) folder has a made-up 40-person company to try the org tools on:
+
+- [`northwind-jan.csv`](examples/northwind-jan.csv): the January team as `id,name,title,manager,kind,email`
+- [`northwind-mindmap.json`](examples/northwind-mindmap.json): the same company after a year of changes (hires,
+  leavers, a reorg, title changes, three projects with people linked to them), with the dated history, built by
+  [`build-sample.mjs`](examples/build-sample.mjs) through the server's own tools
+
+To start from the finished sample, copy it over your map first (back yours up: it replaces `~/.mindkeeper/mindmap.json`).
+Or start from the CSV and ask your assistant, one prompt at a time:
+
+1. *"Import examples/northwind-jan.csv as our org chart, effective 2026-01-05."*
+   → `import_csv filePath="examples/northwind-jan.csv" effectiveDate="2026-01-05"` (managers by CSV id, everyone is a `person`)
+2. *"Add a project Atlas API under Daniel Okafor; Priya leads it and Liam works on it."*
+   → `add_entity name="Atlas API" kind="project" parentId=<Daniel>`, then `link_entities from=<Priya> to=<Atlas> type="leads"` and `type="works on"`
+3. *"Ben Carter left on 31 March. Tariq Aziz joined Sofia's team on 2 March as ML Engineer."*
+   → `delete_node nodeId=<Ben> effectiveDate="2026-03-31"`, `add_entity name="Tariq Aziz" kind="person" parentId=<Sofia> attrs={"title":"ML Engineer"} effectiveDate="2026-03-02"`
+4. *"From 1 June, Sofia reports to Maya as VP Data, and Support moves under Laura."*
+   → `move_node nodeId=<Sofia> newParentId=<Maya> effectiveDate="2026-06-01"`, `add_entity` with the same name and parent to set `attrs.title`, `move_node nodeId=<Fatima> newParentId=<Laura>`
+5. *"Who reports to Daniel, all the way down?"* → `reports_of personId=<Daniel> all=true`
+6. *"Which projects is Daniel's org on?"* → `projects_of entityId=<Daniel> includeReports=true`
+7. *"Who's on Customer insights?"* → `members_of groupId=<Customer insights>` (people under it and people linked to it)
+8. *"What did the org look like on 31 January?"* → `snapshot_as_of date="2026-01-31"`
+9. *"What changed between January and July?"* → `diff_between dateA="2026-01-31" dateB="2026-07-31"`: joined, left, moved (old and new manager), changed fields, links added and removed
+10. *"Give me the org chart."* → `export_orgchart` (Mermaid `flowchart TB` to paste into GitHub/Notion, plus JSON for
+    [mindkeeper-map.js](https://github.com/icedsg/mindkeeper-js)) or `export_html` for an interactive page
+11. *"Export it as CSV so I can edit it in a spreadsheet."* → `export_csv`; edit, then `import_csv` the file again:
+    rows whose `id` is an existing node update it, and the moves and title changes land in the history
+
+To see the same company drawn in the browser, with the January vs July diff highlighted, open the
+[org chart](https://icedsg.github.io/mindkeeper-js/orgchart.html) and
+[reorg](https://icedsg.github.io/mindkeeper-js/reorg.html) samples of mindkeeper-js.
+
 ## Cloud sync
 
 Create `~/.mindkeeper/config.json`:
