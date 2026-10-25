@@ -4,7 +4,8 @@ import { homedir, tmpdir } from "os";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { loadMindmap, saveMindmap } from "./storage.js";
-import type { MindNode, Mindmap } from "./types.js";
+import { ENTITY_KINDS } from "./types.js";
+import type { EntityKind, MindLink, MindNode, Mindmap } from "./types.js";
 
 // Serialized write queue — prevents concurrent file corruption under parallel tool calls
 let writeQueue: Promise<unknown> = Promise.resolve();
@@ -124,6 +125,10 @@ export function deleteNode(
 
     if (map.rootId === nodeId) map.rootId = null;
     delete map.nodes[nodeId];
+    if (map.links) {
+      map.links = map.links.filter((l) => l.from !== nodeId && l.to !== nodeId);
+      if (map.links.length === 0) delete map.links;
+    }
 
     await saveMindmap(map);
     console.error(
@@ -131,6 +136,200 @@ export function deleteNode(
         (orphaned.length ? `, orphaned [${orphaned.join(", ")}]` : "")
     );
     return { deleted: nodeId, orphaned };
+  });
+}
+
+function normalizeAttrs(attrs: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined || v === null) continue;
+    const key = k.trim();
+    if (key) out[key] = String(v);
+  }
+  return out;
+}
+
+function checkKind(kind: string): EntityKind {
+  if (!ENTITY_KINDS.includes(kind as EntityKind)) {
+    throw new Error(`Unknown kind: ${kind} (use one of ${ENTITY_KINDS.join(", ")})`);
+  }
+  return kind as EntityKind;
+}
+
+export function addEntity(
+  name: string,
+  kind: string,
+  parentId?: string,
+  attrs?: Record<string, unknown>,
+  tags?: string[]
+): Promise<MindNode> {
+  return enqueue(async () => {
+    const k = checkKind(kind);
+    const map = await loadMindmap();
+
+    if (parentId !== undefined && !map.nodes[parentId]) {
+      throw new Error(`Parent node not found: ${parentId}`);
+    }
+
+    // Same name + kind under the same parent: merge attrs/tags into the existing node
+    const nameNorm = name.trim().toLowerCase();
+    const existing = Object.values(map.nodes).find(
+      (n) =>
+        n.text.trim().toLowerCase() === nameNorm &&
+        n.parentId === parentId &&
+        (n.kind ?? "idea") === k
+    );
+    if (existing) {
+      if (attrs) existing.attrs = { ...(existing.attrs ?? {}), ...normalizeAttrs(attrs) };
+      if (tags) existing.tags = [...new Set([...existing.tags, ...normalizeTags(tags)])];
+      existing.kind = k;
+      existing.updatedAt = ts();
+      await saveMindmap(map);
+      console.error(`[mindkeeper] merge entity ${existing.id} "${name.slice(0, 60)}"`);
+      return existing;
+    }
+
+    const cleanAttrs = attrs ? normalizeAttrs(attrs) : {};
+    const node: MindNode = {
+      id: uuidv4(),
+      text: name,
+      kind: k,
+      ...(Object.keys(cleanAttrs).length > 0 && { attrs: cleanAttrs }),
+      children: [],
+      createdAt: ts(),
+      updatedAt: ts(),
+      tags: normalizeTags(tags ?? []),
+      ...(parentId !== undefined && { parentId }),
+    };
+
+    map.nodes[node.id] = node;
+    if (parentId !== undefined) {
+      const parent = map.nodes[parentId];
+      if (parent) {
+        parent.children.push(node.id);
+        parent.updatedAt = ts();
+      }
+    } else if (map.rootId === null) {
+      map.rootId = node.id;
+    }
+
+    await saveMindmap(map);
+    console.error(`[mindkeeper] add entity ${k} ${node.id} "${name.slice(0, 60)}"`);
+    return node;
+  });
+}
+
+export function linkEntities(
+  from: string,
+  to: string,
+  type: string,
+  label?: string
+): Promise<MindLink> {
+  return enqueue(async () => {
+    const map = await loadMindmap();
+    if (!map.nodes[from]) throw new Error(`Node not found: ${from}`);
+    if (!map.nodes[to]) throw new Error(`Node not found: ${to}`);
+    if (from === to) throw new Error("A node cannot link to itself");
+    const t = type.trim().toLowerCase();
+    if (!t) throw new Error("Link type is required");
+
+    const links = map.links ?? [];
+    const existing = links.find((l) => l.from === from && l.to === to && l.type === t);
+    if (existing) {
+      if (label !== undefined) {
+        existing.label = label;
+        await saveMindmap(map);
+      }
+      return existing;
+    }
+
+    const link: MindLink = {
+      id: uuidv4(),
+      from,
+      to,
+      type: t,
+      ...(label !== undefined && { label }),
+      createdAt: ts(),
+    };
+    links.push(link);
+    map.links = links;
+    await saveMindmap(map);
+    console.error(`[mindkeeper] link ${from} -${t}-> ${to}`);
+    return link;
+  });
+}
+
+// Remove by linkId, or by from+to (+ type when given)
+export function unlinkEntities(opts: {
+  linkId?: string | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+  type?: string | undefined;
+}): Promise<{ removed: MindLink[] }> {
+  return enqueue(async () => {
+    const map = await loadMindmap();
+    const links = map.links ?? [];
+    const t = opts.type?.trim().toLowerCase();
+    let match: (l: MindLink) => boolean;
+    if (opts.linkId) {
+      match = (l) => l.id === opts.linkId;
+    } else if (opts.from && opts.to) {
+      match = (l) => l.from === opts.from && l.to === opts.to && (!t || l.type === t);
+    } else {
+      throw new Error("Pass linkId, or from and to");
+    }
+    const removed = links.filter(match);
+    if (removed.length === 0) throw new Error("No matching link");
+    map.links = links.filter((l) => !match(l));
+    if (map.links.length === 0) delete map.links;
+    await saveMindmap(map);
+    console.error(`[mindkeeper] unlink ${removed.length}`);
+    return { removed };
+  });
+}
+
+// Re-parent a node (e.g. a person moving to a new manager). newParentId omitted = make it a root-level node.
+export function moveNode(nodeId: string, newParentId?: string): Promise<MindNode> {
+  return enqueue(async () => {
+    const map = await loadMindmap();
+    const node = map.nodes[nodeId];
+    if (!node) throw new Error(`Node not found: ${nodeId}`);
+    if (newParentId !== undefined) {
+      if (!map.nodes[newParentId]) throw new Error(`Parent node not found: ${newParentId}`);
+      // Refuse cycles: the new parent may not be the node or one of its descendants
+      for (let cur: string | undefined = newParentId; cur !== undefined; cur = map.nodes[cur]?.parentId) {
+        if (cur === nodeId) throw new Error("Cannot move a node under itself or its descendants");
+      }
+    }
+    if (node.parentId === newParentId) return node;
+
+    if (node.parentId !== undefined) {
+      const old = map.nodes[node.parentId];
+      if (old) {
+        old.children = old.children.filter((id) => id !== nodeId);
+        old.updatedAt = ts();
+      }
+    }
+    if (newParentId !== undefined) {
+      const parent = map.nodes[newParentId]!;
+      parent.children.push(nodeId);
+      parent.updatedAt = ts();
+      node.parentId = newParentId;
+      if (map.rootId === nodeId) {
+        // The old root now hangs off another tree: that tree's top becomes the root
+        let top = newParentId;
+        while (map.nodes[top]?.parentId !== undefined) top = map.nodes[top]!.parentId!;
+        map.rootId = top;
+      }
+    } else {
+      delete node.parentId;
+      if (map.rootId === null) map.rootId = nodeId;
+    }
+    node.updatedAt = ts();
+
+    await saveMindmap(map);
+    console.error(`[mindkeeper] move ${nodeId} -> ${newParentId ?? "(root level)"}`);
+    return node;
   });
 }
 
@@ -278,6 +477,8 @@ ${librarySource}
       if (!n) return null;
       var kids = (n.children || []).map(function(cid) { return toTree(nodes, cid); }).filter(Boolean);
       var node = { id: n.id, topic: n.text };
+      if (n.kind) node.kind = n.kind;
+      if (n.attrs) node.meta = n.attrs;
       if (kids.length) node.children = kids;
       return node;
     }
@@ -299,6 +500,14 @@ ${librarySource}
           .concat(orphans.map(function(o) { return toTree(nodes, o.id); }))
           .filter(Boolean)
       };
+    }
+
+    if (MAP.links && MAP.links.length) {
+      data.links = MAP.links.map(function(l) {
+        var link = { from: l.from, to: l.to, type: l.type };
+        if (l.label) link.label = l.label;
+        return link;
+      });
     }
 
     var mm = new MindkeeperMap('#map');

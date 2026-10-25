@@ -17,6 +17,10 @@ import {
   exportJSON,
   exportHTML,
   importClaudeExport,
+  addEntity,
+  linkEntities,
+  unlinkEntities,
+  moveNode,
 } from "./mindmap.js";
 import {
   loadConfig,
@@ -24,7 +28,8 @@ import {
   pushToGist,
   pullFromGist,
 } from "./storage.js";
-import type { MindNode, Mindmap } from "./types.js";
+import { ENTITY_KINDS } from "./types.js";
+import type { EntityKind, MindNode, Mindmap } from "./types.js";
 
 const server = new Server(
   { name: "mindkeeper-mcp", version: "1.0.0" },
@@ -36,6 +41,8 @@ const server = new Server(
 interface TreeNode {
   id: string;
   text: string;
+  kind?: EntityKind;
+  attrs?: Record<string, string>;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -48,6 +55,8 @@ function buildTree(nodes: Record<string, MindNode>, rootId: string): TreeNode | 
   return {
     id: node.id,
     text: node.text,
+    ...(node.kind !== undefined && { kind: node.kind }),
+    ...(node.attrs !== undefined && { attrs: node.attrs }),
     tags: node.tags,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
@@ -99,7 +108,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description:
         "Edit the text or tags of an existing node. " +
         "Use this when an idea has been refined, clarified, or its scope has changed. " +
-        "Does not change parent/child relationships — use add_idea + delete_node to restructure.",
+        "Does not change parent/child relationships — use move_node to restructure.",
       inputSchema: {
         type: "object",
         properties: {
@@ -135,6 +144,83 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: "string",
             description: "ID of the node to delete",
           },
+        },
+        required: ["nodeId"],
+      },
+    },
+    {
+      name: "add_entity",
+      description:
+        "Add a typed entity — a person, company, team, role, project or idea — to the mindmap. " +
+        "Use it for org charts and project records: the tree is the reporting line (manager = parent, " +
+        "company/team = parent of its people), and link_entities covers many-to-many relations such as " +
+        "who works on which project. Only record people and organisations the user has told you about. " +
+        "An entity with the same name and kind under the same parent is merged (attrs/tags added), not duplicated.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Display name, e.g. 'Priya Nair' or 'Acme Ltd'" },
+          kind: {
+            type: "string",
+            enum: ENTITY_KINDS,
+            description: "Entity type",
+          },
+          parentId: {
+            type: "string",
+            description: "Parent node ID (the manager, team or company). Omit for a root-level entity.",
+          },
+          attrs: {
+            type: "object",
+            additionalProperties: { type: "string" },
+            description:
+              "Optional attributes as strings, e.g. {title: 'CTO', email, url, start: '2026-01-15', end, status: 'left'}",
+          },
+          tags: { type: "array", items: { type: "string" }, description: "Optional tags" },
+        },
+        required: ["name", "kind"],
+      },
+    },
+    {
+      name: "link_entities",
+      description:
+        "Record a relation between two nodes that is not a parent/child line, e.g. a person " +
+        "'works_on' a project, a company 'owns' a project, a person 'advises' a company. " +
+        "Type is lowercased; the same from/to/type pair is stored once.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "Source node ID" },
+          to: { type: "string", description: "Target node ID" },
+          type: { type: "string", description: "Relation type, e.g. works_on, owns, advises, member_of" },
+          label: { type: "string", description: "Optional display label (defaults to the type)" },
+        },
+        required: ["from", "to", "type"],
+      },
+    },
+    {
+      name: "unlink_entities",
+      description:
+        "Remove a relation made with link_entities. Pass linkId, or from + to (and type to remove only that type).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          linkId: { type: "string", description: "ID of the link to remove" },
+          from: { type: "string", description: "Source node ID" },
+          to: { type: "string", description: "Target node ID" },
+          type: { type: "string", description: "Only remove links of this type" },
+        },
+      },
+    },
+    {
+      name: "move_node",
+      description:
+        "Move a node (and its subtree) under a new parent — e.g. a person gets a new manager or moves team. " +
+        "Omit newParentId to make it a root-level node. Moving a node under its own descendant is refused.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nodeId: { type: "string", description: "ID of the node to move" },
+          newParentId: { type: "string", description: "ID of the new parent. Omit for root level." },
         },
         required: ["nodeId"],
       },
@@ -317,6 +403,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return ok(result);
       }
 
+      case "add_entity": {
+        const node = await addEntity(
+          args["name"] as string,
+          args["kind"] as string,
+          args["parentId"] as string | undefined,
+          args["attrs"] as Record<string, unknown> | undefined,
+          args["tags"] as string[] | undefined
+        );
+        console.error(`[mindkeeper] tool add_entity -> ${node.id}`);
+        return ok({ node });
+      }
+
+      case "link_entities": {
+        const link = await linkEntities(
+          args["from"] as string,
+          args["to"] as string,
+          args["type"] as string,
+          args["label"] as string | undefined
+        );
+        console.error(`[mindkeeper] tool link_entities -> ${link.id}`);
+        return ok({ link });
+      }
+
+      case "unlink_entities": {
+        const result = await unlinkEntities({
+          linkId: args["linkId"] as string | undefined,
+          from: args["from"] as string | undefined,
+          to: args["to"] as string | undefined,
+          type: args["type"] as string | undefined,
+        });
+        console.error(`[mindkeeper] tool unlink_entities (${result.removed.length})`);
+        return ok(result);
+      }
+
+      case "move_node": {
+        const node = await moveNode(
+          args["nodeId"] as string,
+          args["newParentId"] as string | undefined
+        );
+        console.error(`[mindkeeper] tool move_node ${node.id}`);
+        return ok({ node });
+      }
+
       case "search_ideas": {
         const results = await searchNodes(args["query"] as string);
         console.error(`[mindkeeper] tool search_ideas "${args["query"]}" -> ${results.length} hits`);
@@ -343,7 +472,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             .filter((n): n is TreeNode => n !== null);
           const totalNodes = Object.keys(map.nodes).length;
           console.error(`[mindkeeper] tool get_mindmap full (${totalNodes} nodes)`);
-          return ok({ tree, orphans, totalNodes });
+          const links = map.links ?? [];
+          return ok({ tree, orphans, totalNodes, ...(links.length > 0 && { links }) });
         }
       }
 

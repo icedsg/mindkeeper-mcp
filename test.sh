@@ -34,7 +34,9 @@ import { homedir } from 'os';
 import {
   addIdea, updateNode, deleteNode,
   searchNodes, getSubtree, exportMarkdown, exportMermaid, exportOPML, exportJSON,
+  addEntity, linkEntities, unlinkEntities, moveNode,
 } from './build/mindmap.js';
+import { writeFile as writeFileFs, mkdir as mkdirFs } from 'fs/promises';
 
 HEADER
 
@@ -415,6 +417,127 @@ await test('opml tags appear as _tags attribute', async () => {
   const o = await exportOPML();
   if (!o.includes('_tags=')) throw new Error('_tags attribute missing');
   ok('_tags attribute present');
+});
+
+// ── Entities + relations ──────────────────────────────────────────────────────
+section('Entities + relations');
+
+await test('add_entity: company + people with kind and attrs', async () => {
+  const c = await addEntity('Acme Ltd', 'company', undefined, { url: 'https://acme.test' });
+  if (c.kind !== 'company' || c.attrs?.url !== 'https://acme.test') throw new Error('kind/attrs not stored');
+  const ceo = await addEntity('Asha Rao', 'person', c.id, { title: 'CEO' });
+  const cto = await addEntity('Ben Lee', 'person', ceo.id, { title: 'CTO', start: '2026-01-15' });
+  const dev = await addEntity('Cara Diaz', 'person', cto.id, { title: 'Engineer' });
+  const pm  = await addEntity('Dev Shah', 'person', ceo.id, { title: 'PM' });
+  const proj = await addEntity('Project Atlas', 'project', c.id);
+  Object.assign(ids, { co: c.id, ceo: ceo.id, cto: cto.id, dev: dev.id, pm: pm.id, proj: proj.id });
+  if (cto.parentId !== ceo.id) throw new Error('reporting line not set');
+  ok('company, 4 people, 1 project; kind + attrs stored');
+});
+
+await test('add_entity: unknown kind is refused', async () => {
+  try { await addEntity('X', 'planet'); } catch (e) {
+    if (!/Unknown kind/.test(e.message)) throw e;
+    ok('kind validated'); return;
+  }
+  throw new Error('accepted bad kind');
+});
+
+await test('add_entity: same name+kind+parent merges attrs', async () => {
+  const again = await addEntity('Ben Lee', 'person', ids.ceo, { email: 'ben@acme.test' });
+  if (again.id !== ids.cto) throw new Error('duplicate created');
+  if (again.attrs.title !== 'CTO' || again.attrs.email !== 'ben@acme.test') throw new Error('attrs not merged');
+  ok('merged into existing node');
+});
+
+await test('link_entities: stores typed links, dedups same pair+type', async () => {
+  const l1 = await linkEntities(ids.dev, ids.proj, 'Works_On');
+  const l2 = await linkEntities(ids.dev, ids.proj, 'works_on', 'builds');
+  const l3 = await linkEntities(ids.pm, ids.proj, 'leads');
+  if (l1.id !== l2.id || l2.label !== 'builds') throw new Error('dedup/label update failed');
+  if (l1.type !== 'works_on') throw new Error('type not lowercased');
+  const map = await exportJSON();
+  if (map.links.length !== 2) throw new Error(`links=${map.links.length}, want 2`);
+  ids.leadLink = l3.id;
+  ok('2 links stored, type lowercased, duplicate merged');
+});
+
+await test('link_entities: missing node / self link refused', async () => {
+  let n = 0;
+  try { await linkEntities(ids.dev, 'nope', 'x'); } catch { n++; }
+  try { await linkEntities(ids.dev, ids.dev, 'x'); } catch { n++; }
+  if (n !== 2) throw new Error('bad links accepted');
+  ok('refused');
+});
+
+await test('unlink_entities: by id and by from/to', async () => {
+  await unlinkEntities({ linkId: ids.leadLink });
+  const r = await unlinkEntities({ from: ids.dev, to: ids.proj, type: 'works_on' });
+  if (r.removed.length !== 1) throw new Error('from/to remove failed');
+  const map = await exportJSON();
+  if (map.links !== undefined) throw new Error('empty links should be dropped from the file');
+  ok('both removed; links key dropped when empty');
+});
+
+await test('move_node: re-parents and keeps subtree', async () => {
+  const moved = await moveNode(ids.cto, ids.pm);
+  const map = await exportJSON();
+  if (moved.parentId !== ids.pm) throw new Error('parentId not updated');
+  if (map.nodes[ids.ceo].children.includes(ids.cto)) throw new Error('still in old parent');
+  if (!map.nodes[ids.pm].children.includes(ids.cto)) throw new Error('not in new parent');
+  if (map.nodes[ids.dev].parentId !== ids.cto) throw new Error('subtree broken');
+  ok('CTO now under PM, engineer still under CTO');
+});
+
+await test('move_node: refuses cycles', async () => {
+  try { await moveNode(ids.ceo, ids.dev); } catch (e) {
+    if (!/descendants/.test(e.message)) throw e;
+    ok('cycle refused'); return;
+  }
+  throw new Error('cycle accepted');
+});
+
+await test('move_node: to root level and back', async () => {
+  await moveNode(ids.dev);
+  let map = await exportJSON();
+  if (map.nodes[ids.dev].parentId !== undefined) throw new Error('still has parent');
+  if (map.nodes[ids.cto].children.includes(ids.dev)) throw new Error('still a child');
+  await moveNode(ids.dev, ids.cto);
+  map = await exportJSON();
+  if (map.nodes[ids.dev].parentId !== ids.cto) throw new Error('not moved back');
+  ok('detached and re-attached');
+});
+
+await test('delete_node drops links touching the node', async () => {
+  const tmp = await addEntity('Temp Contractor', 'person', ids.co);
+  await linkEntities(tmp.id, ids.proj, 'works_on');
+  await linkEntities(ids.dev, ids.proj, 'works_on');
+  await deleteNode(tmp.id);
+  const map = await exportJSON();
+  if (map.links.some((l) => l.from === tmp.id || l.to === tmp.id)) throw new Error('dangling link');
+  if (map.links.length !== 1) throw new Error(`links=${map.links.length}, want 1`);
+  ok('dangling link removed, other kept');
+});
+
+await test('old mindmap.json (no kind/attrs/links) loads and works unchanged', async () => {
+  const dir = join(homedir(), '.mindkeeper');
+  await mkdirFs(dir, { recursive: true });
+  const legacy = {
+    nodes: {
+      a: { id: 'a', text: 'Old root', children: ['b'], createdAt: '2025-01-01T00:00:00.000Z', updatedAt: '2025-01-01T00:00:00.000Z', tags: ['x'] },
+      b: { id: 'b', text: 'Old child', parentId: 'a', children: [], createdAt: '2025-01-01T00:00:00.000Z', updatedAt: '2025-01-01T00:00:00.000Z', tags: [] },
+    },
+    rootId: 'a',
+  };
+  const saved = JSON.parse(await readFile(join(dir, 'mindmap.json'), 'utf-8'));
+  await writeFileFs(join(dir, 'mindmap.json'), JSON.stringify(legacy), 'utf-8');
+  const md = await exportMarkdown();
+  if (!md.includes('- Old root') || !md.includes('  - Old child')) throw new Error('legacy export broken');
+  await updateNode('b', 'Old child renamed');
+  const after = await exportJSON();
+  if ('links' in after || 'kind' in after.nodes.b || 'attrs' in after.nodes.b) throw new Error('legacy file gained new keys');
+  await writeFileFs(join(dir, 'mindmap.json'), JSON.stringify(saved), 'utf-8');
+  ok('legacy file reads, edits, and keeps its shape');
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────
