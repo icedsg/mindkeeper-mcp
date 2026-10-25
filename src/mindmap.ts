@@ -963,3 +963,406 @@ export async function importClaudeExport(filePath: string): Promise<{
         : `All ${rawList.length} conversations included above.`,
   };
 }
+
+// ── Org queries ──────────────────────────────────────────────────────────────
+
+export interface Related {
+  id: string;
+  name: string;
+  kind?: EntityKind;
+  title?: string;
+  via: string; // "tree" (parent/child line) or "link:<type>"
+}
+
+function related(n: MindNode, via: string): Related {
+  return {
+    id: n.id,
+    name: n.text,
+    ...(n.kind !== undefined && { kind: n.kind }),
+    ...(n.attrs?.["title"] !== undefined && { title: n.attrs["title"] }),
+    via,
+  };
+}
+
+function mustNode(map: Mindmap, id: string): MindNode {
+  const n = map.nodes[id];
+  if (!n) throw new Error(`Node not found: ${id}`);
+  return n;
+}
+
+function descendants(map: Mindmap, id: string): MindNode[] {
+  const out: MindNode[] = [];
+  const walk = (cid: string): void => {
+    const n = map.nodes[cid];
+    if (!n) return;
+    out.push(n);
+    n.children.forEach(walk);
+  };
+  map.nodes[id]?.children.forEach(walk);
+  return out;
+}
+
+// Nodes linked to id in either direction, with the link type
+function linkedTo(map: Mindmap, id: string): Array<{ node: MindNode; type: string }> {
+  const out: Array<{ node: MindNode; type: string }> = [];
+  for (const l of map.links ?? []) {
+    const other = l.from === id ? l.to : l.to === id ? l.from : undefined;
+    const node = other !== undefined ? map.nodes[other] : undefined;
+    if (node) out.push({ node, type: l.type });
+  }
+  return out;
+}
+
+// Keep the first hit per id (tree before links)
+function dedupe(list: Related[]): Related[] {
+  const seen = new Set<string>();
+  return list.filter((r) => !seen.has(r.id) && seen.add(r.id));
+}
+
+// Projects an entity is on: projects linked to it or under it in the tree.
+// includeReports also counts the projects of everyone below it (a manager's team, a company's people).
+export async function projectsOf(
+  entityId: string,
+  includeReports = false
+): Promise<{ entity: Related; projects: Related[] }> {
+  const map = await loadMindmap();
+  const entity = mustNode(map, entityId);
+  const found: Related[] = [];
+  const scan = (id: string): void => {
+    for (const n of descendants(map, id)) if (n.kind === "project") found.push(related(n, "tree"));
+    for (const { node, type } of linkedTo(map, id)) {
+      if (node.kind === "project") found.push(related(node, `link:${type}`));
+    }
+  };
+  scan(entityId);
+  if (includeReports) {
+    for (const n of descendants(map, entityId)) if (n.kind !== "project") scan(n.id);
+  }
+  return { entity: related(entity, "self"), projects: dedupe(found.filter((p) => p.id !== entityId)) };
+}
+
+// People in a project, company or team: people below it in the tree plus people linked to it
+export async function membersOf(groupId: string): Promise<{ group: Related; members: Related[] }> {
+  const map = await loadMindmap();
+  const group = mustNode(map, groupId);
+  const found: Related[] = [];
+  for (const n of descendants(map, groupId)) if (n.kind === "person") found.push(related(n, "tree"));
+  for (const { node, type } of linkedTo(map, groupId)) {
+    if (node.kind === "person") found.push(related(node, `link:${type}`));
+  }
+  return { group: related(group, "self"), members: dedupe(found) };
+}
+
+// A person's manager (nearest person above) and reports. Teams and roles in between are looked
+// through, so a person's direct reports include people in a team node under them.
+export async function reportsOf(
+  personId: string,
+  all = false
+): Promise<{ person: Related; manager: Related | null; reports: Array<Related & { depth: number; managerId: string }> }> {
+  const map = await loadMindmap();
+  const person = mustNode(map, personId);
+
+  let manager: Related | null = null;
+  for (let cur = person.parentId; cur !== undefined; cur = map.nodes[cur]?.parentId) {
+    const n = map.nodes[cur];
+    if (!n) break;
+    if (n.kind === "person") { manager = related(n, "tree"); break; }
+  }
+
+  const reports: Array<Related & { depth: number; managerId: string }> = [];
+  const walk = (id: string, managerId: string, depth: number): void => {
+    for (const cid of map.nodes[id]?.children ?? []) {
+      const c = map.nodes[cid];
+      if (!c) continue;
+      if (c.kind === "person") {
+        reports.push({ ...related(c, "tree"), depth, managerId });
+        if (all) walk(c.id, c.id, depth + 1);
+      } else if (c.kind === "team" || c.kind === "role") {
+        walk(c.id, managerId, depth);
+      }
+    }
+  };
+  walk(personId, personId, 1);
+  return { person: related(person, "self"), manager, reports };
+}
+
+// ── Org exports ──────────────────────────────────────────────────────────────
+
+// mindkeeper-map data (the shape MindkeeperMap.init takes): {id, topic, kind, meta, children, links}
+export interface MapNodeData {
+  id: string;
+  topic: string;
+  kind?: EntityKind;
+  meta?: Record<string, string>;
+  children?: MapNodeData[];
+  links?: Array<{ from: string; to: string; type: string; label?: string }>;
+}
+
+// Top-level nodes to export: rootId's subtree, or the root plus every orphan
+function exportRoots(map: Mindmap, rootId?: string): string[] {
+  if (rootId !== undefined) {
+    mustNode(map, rootId);
+    return [rootId];
+  }
+  const tops = Object.values(map.nodes)
+    .filter((n) => n.parentId === undefined || !map.nodes[n.parentId])
+    .map((n) => n.id);
+  return map.rootId && tops.includes(map.rootId)
+    ? [map.rootId, ...tops.filter((id) => id !== map.rootId)]
+    : tops;
+}
+
+function toMapData(map: Mindmap, id: string, seen: Set<string>): MapNodeData | null {
+  const n = map.nodes[id];
+  if (!n || seen.has(id)) return null;
+  seen.add(id);
+  const kids = n.children.map((c) => toMapData(map, c, seen)).filter((c): c is MapNodeData => c !== null);
+  return {
+    id: n.id,
+    topic: n.text,
+    ...(n.kind !== undefined && { kind: n.kind }),
+    ...(n.attrs !== undefined && { meta: n.attrs }),
+    ...(kids.length > 0 && { children: kids }),
+  };
+}
+
+export async function exportOrgchart(rootId?: string): Promise<{ mermaid: string; data: MapNodeData; nodeCount: number }> {
+  const map = await loadMindmap();
+  const seen = new Set<string>();
+  const trees = exportRoots(map, rootId)
+    .map((id) => toMapData(map, id, seen))
+    .filter((t): t is MapNodeData => t !== null);
+  const data: MapNodeData =
+    trees.length === 1 ? trees[0]! : { id: "__root__", topic: "Organisation", ...(trees.length > 0 && { children: trees }) };
+  const links = (map.links ?? [])
+    .filter((l) => seen.has(l.from) && seen.has(l.to))
+    .map((l) => ({ from: l.from, to: l.to, type: l.type, ...(l.label !== undefined && { label: l.label }) }));
+  if (links.length > 0) data.links = links;
+
+  // Mermaid flowchart TB: name + title per card, a class per kind, links as labelled dotted arrows
+  const sid = (id: string): string => "n" + id.replace(/[^A-Za-z0-9_]/g, "_");
+  const esc = (s: string): string => s.replace(/"/g, "#quot;").replace(/[<>]/g, "");
+  const lines = ["flowchart TB"];
+  const edges: string[] = [];
+  const kinds = new Map<string, string[]>();
+  for (const id of seen) {
+    const n = map.nodes[id]!;
+    const title = n.attrs?.["title"];
+    lines.push(`  ${sid(id)}["${esc(n.text)}${title ? `<br/><small>${esc(title)}</small>` : ""}"]`);
+    if (n.kind) kinds.set(n.kind, [...(kinds.get(n.kind) ?? []), sid(id)]);
+    for (const c of n.children) if (seen.has(c)) edges.push(`  ${sid(id)} --> ${sid(c)}`);
+  }
+  for (const l of links) edges.push(`  ${sid(l.from)} -.->|${esc(l.label ?? l.type)}| ${sid(l.to)}`);
+  lines.push(...edges);
+  const styles: Record<string, string> = {
+    person: "fill:#eef4ff,stroke:#4c7bd9",
+    company: "fill:#fff4e5,stroke:#d98b1f",
+    team: "fill:#eefaf0,stroke:#3a9d55",
+    role: "fill:#f6f0ff,stroke:#8a5cd6",
+    project: "fill:#fff0f3,stroke:#d6456a",
+    idea: "fill:#f5f5f5,stroke:#999",
+  };
+  for (const [k, list] of kinds) {
+    lines.push(`  classDef ${k} ${styles[k]}`);
+    lines.push(`  class ${list.join(",")} ${k}`);
+  }
+  return { mermaid: lines.join("\n"), data, nodeCount: seen.size };
+}
+
+// ── CSV (id,name,title,manager,kind) ─────────────────────────────────────────
+
+const CSV_COLUMNS = ["id", "name", "title", "manager", "kind"];
+
+function csvCell(v: string): string {
+  return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  const s = text.replace(/^﻿/, "");
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]!;
+    if (quoted) {
+      if (ch === '"' && s[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && s[i + 1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += ch;
+  }
+  if (cell !== "" || row.length > 0) { row.push(cell); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+}
+
+// One row per node; manager = parent id. Other attrs (email, start, ...) follow as extra columns.
+export async function exportCsv(rootId?: string): Promise<{ csv: string; rows: number }> {
+  const map = await loadMindmap();
+  const order: MindNode[] = [];
+  const seen = new Set<string>();
+  const walk = (id: string): void => {
+    const n = map.nodes[id];
+    if (!n || seen.has(id)) return;
+    seen.add(id);
+    order.push(n);
+    n.children.forEach(walk);
+  };
+  exportRoots(map, rootId).forEach(walk);
+  const extra = [...new Set(order.flatMap((n) => Object.keys(n.attrs ?? {})))]
+    .filter((k) => !CSV_COLUMNS.includes(k))
+    .sort();
+  const lines = [[...CSV_COLUMNS, ...extra].join(",")];
+  for (const n of order) {
+    const parent = n.parentId !== undefined && seen.has(n.parentId) ? n.parentId : "";
+    const cells = [n.id, n.text, n.attrs?.["title"] ?? "", parent, n.kind ?? "", ...extra.map((k) => n.attrs?.[k] ?? "")];
+    lines.push(cells.map(csvCell).join(","));
+  }
+  return { csv: lines.join("\n") + "\n", rows: order.length };
+}
+
+// Import people (or any kind) from CSV with a header row: name is required; id, title, manager and kind
+// are optional (kind defaults to person); other columns become attrs. manager may be another row's id,
+// another row's name, or an existing node id. A row whose id is an existing node updates that node
+// (so export_csv -> edit -> import_csv round-trips); rows without a manager go under parentId.
+export function importCsv(
+  csv: string,
+  parentId?: string,
+  effectiveDate?: string
+): Promise<{ added: number; updated: number; moved: number; warnings: string[]; ids: Record<string, string> }> {
+  return enqueue(async () => {
+    const eff = checkDate(effectiveDate);
+    const map = await loadMindmap();
+    if (parentId !== undefined && !map.nodes[parentId]) throw new Error(`Parent node not found: ${parentId}`);
+
+    const rows = parseCsv(csv);
+    const header = (rows.shift() ?? []).map((h) => h.trim().toLowerCase());
+    const col = (name: string): number => header.indexOf(name);
+    if (col("name") < 0) throw new Error("CSV needs a header row with a name column");
+    const recs = rows.map((r, i) => {
+      const get = (name: string): string => (col(name) >= 0 ? (r[col(name)] ?? "").trim() : "");
+      const attrs: Record<string, string> = {};
+      header.forEach((h, j) => {
+        const v = (r[j] ?? "").trim();
+        if (h && v && !["id", "name", "manager", "kind"].includes(h)) attrs[h] = v;
+      });
+      const kind = get("kind") || "person";
+      return { line: i + 2, key: get("id") || `row${i + 2}`, name: get("name"), manager: get("manager"), kind, attrs };
+    });
+    for (const r of recs) {
+      if (!r.name) throw new Error(`Line ${r.line}: name is empty`);
+      checkKind(r.kind);
+    }
+
+    const warnings: string[] = [];
+    const byKey = new Map(recs.map((r) => [r.key, r]));
+    const byName = new Map<string, typeof recs[number]>();
+    for (const r of recs) if (!byName.has(r.name.toLowerCase())) byName.set(r.name.toLowerCase(), r);
+    const ids: Record<string, string> = {}; // csv key -> node id
+    let added = 0, updated = 0, moved = 0;
+
+    const attach = (n: MindNode, newParent: string | undefined): void => {
+      if (n.parentId === newParent) return;
+      if (n.parentId !== undefined) {
+        const old = map.nodes[n.parentId];
+        if (old) old.children = old.children.filter((c) => c !== n.id);
+      }
+      if (newParent !== undefined) {
+        map.nodes[newParent]!.children.push(n.id);
+        n.parentId = newParent;
+      } else {
+        delete n.parentId;
+      }
+    };
+
+    // Managers first: resolve each row's parent before placing it; a cycle falls back to parentId
+    const state = new Map<string, "busy" | "done">();
+    const place = (r: typeof recs[number]): string => {
+      if (state.get(r.key) === "done") return ids[r.key]!;
+      if (state.get(r.key) === "busy") throw new Error("cycle");
+      state.set(r.key, "busy");
+
+      let parent = parentId;
+      if (r.manager) {
+        const m = byKey.get(r.manager) ?? byName.get(r.manager.toLowerCase());
+        if (m && m !== r) {
+          try { parent = place(m); }
+          catch { warnings.push(`Line ${r.line}: manager loop at "${r.manager}", placed under the import parent`); }
+        } else if (map.nodes[r.manager] && r.manager !== r.key) {
+          parent = r.manager;
+        } else {
+          warnings.push(`Line ${r.line}: manager "${r.manager}" not found, placed under the import parent`);
+        }
+      }
+
+      const existing = map.nodes[r.key];
+      if (existing) {
+        // Never hang a node under its own subtree
+        for (let cur = parent; cur !== undefined; cur = map.nodes[cur]?.parentId) {
+          if (cur === existing.id) { parent = existing.parentId; warnings.push(`Line ${r.line}: move would make a loop, kept the old manager`); break; }
+        }
+        const before = nodeState(existing);
+        const movedHere = existing.parentId !== parent;
+        existing.text = r.name;
+        existing.kind = r.kind as EntityKind;
+        existing.attrs = { ...(existing.attrs ?? {}), ...r.attrs };
+        if (Object.keys(existing.attrs).length === 0) delete existing.attrs;
+        attach(existing, parent);
+        const rootBefore = map.rootId;
+        if (map.rootId === existing.id && parent !== undefined) {
+          let top = parent;
+          while (map.nodes[top]?.parentId !== undefined) top = map.nodes[top]!.parentId!;
+          map.rootId = top;
+        }
+        existing.updatedAt = ts();
+        const after = nodeState(existing);
+        if (movedHere) {
+          moved++;
+          record(map, {
+            op: "move", nodeId: existing.id, before, after, effectiveDate: eff,
+            ...(rootBefore !== map.rootId && { rootBefore }),
+          });
+        } else if (JSON.stringify(before) !== JSON.stringify(after)) {
+          updated++;
+          record(map, { op: "update", nodeId: existing.id, before, after, effectiveDate: eff });
+        }
+        ids[r.key] = existing.id;
+      } else {
+        const node: MindNode = {
+          id: uuidv4(),
+          text: r.name,
+          kind: r.kind as EntityKind,
+          ...(Object.keys(r.attrs).length > 0 && { attrs: r.attrs }),
+          children: [],
+          createdAt: ts(),
+          updatedAt: ts(),
+          tags: [],
+        };
+        map.nodes[node.id] = node;
+        attach(node, parent);
+        const rootBefore = map.rootId;
+        if (parent === undefined && map.rootId === null) map.rootId = node.id;
+        record(map, {
+          op: "add", nodeId: node.id, after: nodeState(node), effectiveDate: eff,
+          ...(rootBefore !== map.rootId && { rootBefore }),
+        });
+        added++;
+        ids[r.key] = node.id;
+      }
+      state.set(r.key, "done");
+      return ids[r.key]!;
+    };
+    for (const r of recs) {
+      try { place(r); }
+      catch { /* cycle already reported by the row that hit it */ }
+    }
+
+    await saveMindmap(map);
+    console.error(`[mindkeeper] import csv +${added} ~${updated} >${moved}`);
+    return { added, updated, moved, warnings, ids };
+  });
+}

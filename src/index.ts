@@ -24,6 +24,12 @@ import {
   getHistory,
   snapshotAsOf,
   diffBetween,
+  projectsOf,
+  membersOf,
+  reportsOf,
+  exportOrgchart,
+  exportCsv,
+  importCsv,
 } from "./mindmap.js";
 import {
   loadConfig,
@@ -33,9 +39,15 @@ import {
 } from "./storage.js";
 import { ENTITY_KINDS } from "./types.js";
 import type { EntityKind, MindNode, Mindmap } from "./types.js";
+import { readFileSync } from "fs";
+import { readFile } from "fs/promises";
+
+const pkg = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf-8")
+) as { version: string };
 
 const server = new Server(
-  { name: "mindkeeper-mcp", version: "1.0.0" },
+  { name: "mindkeeper-mcp", version: pkg.version },
   { capabilities: { tools: {} } }
 );
 
@@ -300,6 +312,98 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "projects_of",
+      description:
+        "Which projects a person, team or company is on: projects linked to it (any link type, either direction) " +
+        "or sitting under it in the tree. includeReports adds the projects of everyone below it.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          entityId: { type: "string", description: "Person, team or company node ID" },
+          includeReports: { type: "boolean", description: "Also count projects of people below it (default false)" },
+        },
+        required: ["entityId"],
+      },
+    },
+    {
+      name: "members_of",
+      description:
+        "Who is in a project, company or team: people below it in the tree plus people linked to it " +
+        "(e.g. works_on a project). Each member says whether it came from the tree or a link.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          groupId: { type: "string", description: "Project, company or team node ID" },
+        },
+        required: ["groupId"],
+      },
+    },
+    {
+      name: "reports_of",
+      description:
+        "A person's manager (nearest person above them) and their reports. Team and role nodes in between are " +
+        "looked through. all: true lists the whole reporting tree with depth and each report's manager.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          personId: { type: "string", description: "Person node ID" },
+          all: { type: "boolean", description: "Every report below, not just direct ones (default false)" },
+        },
+        required: ["personId"],
+      },
+    },
+    {
+      name: "export_orgchart",
+      description:
+        "Export the org chart (the whole map, or the subtree under rootId) as a Mermaid flowchart TB " +
+        "(name + title per card, colour by kind, cross-links as dotted labelled arrows) and as mindkeeper-map JSON " +
+        "with links, ready for new MindkeeperMap(el, {layout: 'orgchart'}).init(data).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          rootId: { type: "string", description: "Top node of the chart. Omit for the whole map." },
+          format: {
+            type: "string",
+            enum: ["both", "mermaid", "json"],
+            description: "What to return (default both)",
+          },
+        },
+      },
+    },
+    {
+      name: "export_csv",
+      description:
+        "Export people and other nodes as CSV: id,name,title,manager,kind (manager = parent node id), " +
+        "then any other attributes (email, start, ...) as extra columns. Opens in any spreadsheet; edit and " +
+        "send back with import_csv.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          rootId: { type: "string", description: "Only this node and everything below it. Omit for the whole map." },
+        },
+      },
+    },
+    {
+      name: "import_csv",
+      description:
+        "Import an org chart from CSV with a header row. name is required; id, title, manager and kind are optional " +
+        "(kind defaults to person); other columns become attributes. manager may be another row's id or name, or an " +
+        "existing node ID. Rows whose id is an existing node update it (so export_csv output round-trips, and " +
+        "changed managers become moves in history). Pass the CSV text, or a file path. Only import data the user gave you.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          effectiveDate: {
+            type: "string",
+            description: "When this really happened (YYYY-MM-DD), if not today, e.g. a hire or reorg date. Used by snapshot_as_of and diff_between.",
+          },
+          csv: { type: "string", description: "CSV text" },
+          filePath: { type: "string", description: "Path to a .csv file (instead of csv)" },
+          parentId: { type: "string", description: "Node to hang rows without a manager under (e.g. the company). Omit for root level." },
+        },
+      },
+    },
+    {
       name: "search_ideas",
       description:
         "Search the mindmap for nodes matching a query string. " +
@@ -559,6 +663,52 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           `[mindkeeper] tool diff_between ${dateA}..${dateB} +${diff.joined.length} -${diff.left.length} ~${diff.moved.length}`
         );
         return ok(diff);
+      }
+
+      case "projects_of": {
+        const result = await projectsOf(args["entityId"] as string, args["includeReports"] === true);
+        console.error(`[mindkeeper] tool projects_of -> ${result.projects.length}`);
+        return ok(result);
+      }
+
+      case "members_of": {
+        const result = await membersOf(args["groupId"] as string);
+        console.error(`[mindkeeper] tool members_of -> ${result.members.length}`);
+        return ok(result);
+      }
+
+      case "reports_of": {
+        const result = await reportsOf(args["personId"] as string, args["all"] === true);
+        console.error(`[mindkeeper] tool reports_of -> ${result.reports.length}`);
+        return ok(result);
+      }
+
+      case "export_orgchart": {
+        const format = (args["format"] as string | undefined) ?? "both";
+        const result = await exportOrgchart(args["rootId"] as string | undefined);
+        console.error(`[mindkeeper] tool export_orgchart ${format} (${result.nodeCount} nodes)`);
+        if (format === "mermaid") return { content: [{ type: "text" as const, text: result.mermaid }] };
+        if (format === "json") return ok(result.data);
+        return ok(result);
+      }
+
+      case "export_csv": {
+        const result = await exportCsv(args["rootId"] as string | undefined);
+        console.error(`[mindkeeper] tool export_csv (${result.rows} rows)`);
+        return { content: [{ type: "text" as const, text: result.csv }] };
+      }
+
+      case "import_csv": {
+        const filePath = args["filePath"] as string | undefined;
+        const csv = (args["csv"] as string | undefined) ?? (filePath ? await readFile(filePath, "utf-8") : undefined);
+        if (!csv) throw new Error("Pass csv text or filePath");
+        const result = await importCsv(
+          csv,
+          args["parentId"] as string | undefined,
+          args["effectiveDate"] as string | undefined
+        );
+        console.error(`[mindkeeper] tool import_csv +${result.added} ~${result.updated} >${result.moved}`);
+        return ok(result);
       }
 
       case "search_ideas": {

@@ -36,6 +36,7 @@ import {
   searchNodes, getSubtree, exportMarkdown, exportMermaid, exportOPML, exportJSON,
   addEntity, linkEntities, unlinkEntities, moveNode,
   getHistory, snapshotAsOf, diffBetween, exportHTML,
+  projectsOf, membersOf, reportsOf, exportOrgchart, exportCsv, importCsv,
 } from './build/mindmap.js';
 import { writeFile as writeFileFs, mkdir as mkdirFs } from 'fs/promises';
 
@@ -688,6 +689,123 @@ await test('export_html leaves history out of the page', async () => {
   const html = await readFile(filePath, 'utf-8');
   if (html.includes('"history"')) throw new Error('history inlined in HTML');
   ok('no history in the HTML export');
+});
+
+// ── Org queries + org exports + CSV ──────────────────────────────────────────
+section('Org queries + exports + CSV');
+
+const oq = {};
+await test('import_csv builds a tree (manager by id or name, extra columns as attrs)', async () => {
+  await writeFileFs(join(homedir(), '.mindkeeper', 'mindmap.json'), JSON.stringify({ nodes: {}, rootId: null }), 'utf-8');
+  const co = await addEntity('Acme', 'company');
+  oq.co = co.id;
+  const csv = [
+    'id,name,title,manager,kind,email',
+    'e1,Ana Ruiz,CEO,,,ana@acme.test',
+    'e2,"Ben, Jr.",CTO,e1,person,',
+    't1,Platform,,Ben; Jr.,team,',
+    'e3,Cara,Engineer,t1,,',
+    'e4,Dev,"Engineer ""II""",Ana Ruiz,,',
+    'e5,Eve,Intern,nobody,,',
+  ].join('\r\n').replace('Ben; Jr.', 'e2');
+  const r = await importCsv(csv, co.id, '2026-01-15');
+  if (r.added !== 6) throw new Error(`added=${r.added}`);
+  if (r.warnings.length !== 1 || !r.warnings[0].includes('nobody')) throw new Error(`warnings=${JSON.stringify(r.warnings)}`);
+  Object.assign(oq, r.ids);
+  const m = await exportJSON();
+  if (m.nodes[oq.e1].parentId !== co.id) throw new Error('CEO not under the company');
+  if (m.nodes[oq.e2].text !== 'Ben, Jr.' || m.nodes[oq.e2].parentId !== oq.e1) throw new Error('quoted name / manager by id');
+  if (m.nodes[oq.e4].parentId !== oq.e1) throw new Error('manager by name');
+  if (m.nodes[oq.e4].attrs.title !== 'Engineer "II"') throw new Error('escaped quotes');
+  if (m.nodes[oq.e1].attrs.email !== 'ana@acme.test') throw new Error('extra column not an attr');
+  if (m.nodes[oq.t1].kind !== 'team' || m.nodes[oq.e3].kind !== 'person') throw new Error('kinds');
+  if (m.nodes[oq.e5].parentId !== co.id) throw new Error('unknown manager should fall back to parent');
+  if (m.history.filter((h) => h.op === 'add' && h.effectiveDate === '2026-01-15').length !== 6) throw new Error('history');
+  ok('6 rows, quoted cells, name/id managers, 1 warning, dated history');
+});
+
+await test('import_csv refuses bad input before touching the map', async () => {
+  const before = JSON.stringify(await exportJSON());
+  for (const bad of ['title\nCEO', 'name,kind\nX,planet']) {
+    let threw = false;
+    try { await importCsv(bad); } catch { threw = true; }
+    if (!threw) throw new Error(`accepted: ${bad}`);
+  }
+  if (JSON.stringify(await exportJSON()) !== before) throw new Error('map changed');
+  ok('no name column / unknown kind throw');
+});
+
+await test('import_csv manager loop falls back with a warning', async () => {
+  const r = await importCsv('id,name,manager\nx,X,y\ny,Y,x\n', oq.co);
+  if (r.added !== 2 || !r.warnings.some((w) => w.includes('loop'))) throw new Error(JSON.stringify(r));
+  const m = await exportJSON();
+  const px = m.nodes[r.ids.x].parentId, py = m.nodes[r.ids.y].parentId;
+  if (!((px === r.ids.y && py === oq.co) || (py === r.ids.x && px === oq.co))) throw new Error('loop not broken');
+  await deleteNode(r.ids.x); await deleteNode(r.ids.y);
+  ok('one of the pair goes under the import parent');
+});
+
+await test('reports_of: direct (through team), all, manager', async () => {
+  const d = await reportsOf(oq.e2);
+  if (d.reports.map((r) => r.name).join() !== 'Cara') throw new Error(`direct=${d.reports.map((r) => r.name)}`);
+  if (d.manager?.id !== oq.e1) throw new Error('manager');
+  const a = await reportsOf(oq.e1, true);
+  const names = a.reports.map((r) => `${r.name}@${r.depth}`).sort().join();
+  if (names !== 'Ben, Jr.@1,Cara@2,Dev@1') throw new Error(names);
+  if ((await reportsOf(oq.e3)).manager?.id !== oq.e2) throw new Error('manager through team');
+  if ((await reportsOf(oq.e1)).manager !== null) throw new Error('CEO has no manager');
+  ok('Ben -> Cara via team; Ana all = 3; Cara manager = Ben');
+});
+
+await test('projects_of / members_of with links and tree', async () => {
+  const p1 = await addEntity('Apollo', 'project', oq.co);
+  const p2 = await addEntity('Hermes', 'project', oq.t1);
+  oq.p1 = p1.id; oq.p2 = p2.id;
+  await linkEntities(oq.e3, p1.id, 'works_on');
+  await linkEntities(p1.id, oq.e4, 'led_by');
+  const cara = await projectsOf(oq.e3);
+  if (cara.projects.length !== 1 || cara.projects[0].via !== 'link:works_on') throw new Error(JSON.stringify(cara));
+  const team = await projectsOf(oq.t1);
+  if (team.projects.map((p) => p.name).join() !== 'Hermes') throw new Error('team tree project');
+  const ben = await projectsOf(oq.e2, true);
+  if (ben.projects.map((p) => p.name).sort().join() !== 'Apollo,Hermes') throw new Error(`ben=${ben.projects.map((p) => p.name)}`);
+  if ((await projectsOf(oq.e2)).projects.map((p) => p.name).join() !== 'Hermes') throw new Error('without includeReports: tree only');
+  const mem = await membersOf(p1.id);
+  if (mem.members.map((m) => m.name).sort().join() !== 'Cara,Dev') throw new Error('project members');
+  const co = await membersOf(oq.co);
+  if (co.members.length !== 5 || co.members.some((m) => m.via !== 'tree')) throw new Error(`company=${co.members.length}`);
+  ok('link + tree projects, includeReports, members both ways');
+});
+
+await test('export_orgchart: Mermaid TB + map JSON with links', async () => {
+  const r = await exportOrgchart();
+  if (!r.mermaid.startsWith('flowchart TB')) throw new Error('not TB');
+  if (!r.mermaid.includes('<br/><small>CTO</small>')) throw new Error('no title line');
+  if (!r.mermaid.includes('-.->|works_on|')) throw new Error('no link arrow');
+  if (!r.mermaid.includes('classDef person') || !r.mermaid.includes('#quot;II#quot;')) throw new Error('classes/escaping');
+  if (r.data.id !== oq.co || r.data.kind !== 'company') throw new Error('root');
+  if (r.data.links.length !== 2) throw new Error(`links=${r.data.links.length}`);
+  const sub = await exportOrgchart(oq.t1);
+  if (sub.nodeCount !== 3 || sub.data.links) throw new Error('subtree should drop links leaving it');
+  if (sub.data.children.find((c) => c.id === oq.e3).meta.title !== 'Engineer') throw new Error('meta');
+  ok(`${r.nodeCount} nodes, 2 links; subtree 3 nodes, no dangling links`);
+});
+
+await test('export_csv -> edit -> import_csv round-trips as moves/updates', async () => {
+  const { csv, rows } = await exportCsv();
+  if (rows !== 9) throw new Error(`rows=${rows}`);
+  const lines = csv.trim().split('\n');
+  if (lines[0] !== 'id,name,title,manager,kind,email') throw new Error(lines[0]);
+  if (!csv.includes('"Ben, Jr."') || !csv.includes('"Engineer ""II"""')) throw new Error('quoting');
+  // Dev moves under Ben, Cara gets a new title
+  const edited = csv
+    .replace(`${oq.e4},Dev,"Engineer ""II""",${oq.e1}`, `${oq.e4},Dev,"Engineer ""II""",${oq.e2}`)
+    .replace(`${oq.e3},Cara,Engineer,`, `${oq.e3},Cara,Senior Engineer,`);
+  const r = await importCsv(edited, undefined, '2026-07-01');
+  if (r.added !== 0 || r.moved !== 1 || r.updated !== 1) throw new Error(JSON.stringify(r));
+  const d = await diffBetween('2026-06-30', '2026-07-01');
+  if (d.moved.length !== 1 || d.moved[0].id !== oq.e4) throw new Error('diff moved');
+  ok('9 rows; re-import = 1 move + 1 update, visible in diff_between');
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────
